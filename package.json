@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "description": "A movie reservation backend.",
   "main": "src/app.js",
+  "type": "module",
   "scripts": {
-    "app": "node src/app.js",
+    "app": "node --env-file=.env src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Louie-KC",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "express": "^5.1.0",
+    "express-async-handler": "^1.2.0",
+    "jest": "^30.0.4",
+    "mysql2": "^3.14.2"
+  }
 }
