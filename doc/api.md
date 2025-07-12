@@ -61,15 +61,15 @@ Retrieve a list of all locations.
 * Authentication: None
 * Response:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <location ID>,
-        "address": <address>
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <location ID>,
+              "address": <address>
+          },
+          ...
+      ]
+      ```
 
 ### GET /movie#genre={genre}
 Retrieve a list of all movies matching the provided `genre` (if specified)
@@ -77,18 +77,18 @@ Retrieve a list of all movies matching the provided `genre` (if specified)
 * Authentication: None
 * Response:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <movie ID>,
-        "title": <movie title>,
-        "description": <movie description>,
-        "duration": <movie duration in minutes>,
-        "poster": <TODO: Movie poster>
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <movie id>,
+              "title": <movie title>,
+              "description": <movie description>,
+              "duration": <movie duration in minutes>,
+              "poster": <TODO: Movie poster>
+          },
+          ...
+      ]
+      ```
 
 ### GET /movie/{movie id}
 Retrieve information about a movie.
@@ -96,19 +96,19 @@ Retrieve information about a movie.
 * Authentication: None
 * Response
     * HTTP 200 OK: Success
-```json
-{
-    "title": <movie title>,
-    "description": <movie description>,
-    "duration": <movie duration in minutes>,
-    "poster": <TODO: Movie poster>,
-    "genres": [
-        <genre 1>,
-        <genre 2>,
-        ...
-    ]
-}
-```
+      ```json
+      {
+          "title": <movie title>,
+          "description": <movie description>,
+          "duration": <movie duration in minutes>,
+          "poster": <TODO: Movie poster>,
+          "genres": [
+              <genre 1>,
+              <genre 2>,
+              ...
+          ]
+      }
+      ```
 
 ### GET /schedule?location={location id}?&date={YYYY-MM-DD}
 Retrieve the schedules for movies at a location.
@@ -119,26 +119,26 @@ If the `date` parameter is not specified, the current date is assumed.
 * Authentication: None
 * Response:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <movie ID>,
-        "title": <movie title>,
-        "description": <movie description>,
-        "duration": <movie duration in minutes>,
-        "poster": <TODO: Movie poster>,
-        "schedule": [
-            {
-                "id": <schedule id>,
-                "time": <schedule start time>,
-                "seats": <number of seats remaining>
-            },
-            ...
-        ]
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <movie id>,
+              "title": <movie title>,
+              "description": <movie description>,
+              "duration": <movie duration in minutes>,
+              "poster": <TODO: Movie poster>,
+              "schedule": [
+                  {
+                  "id": <schedule id>,
+                  "time": <schedule start time>,
+                  "seats": <number of seats remaining>
+                  },
+                  ...
+              ]
+          },
+          ...
+      ]
+      ```
 
 ### GET /schedule/{schedule id}
 Retrieve information about a schedule.
@@ -146,16 +146,16 @@ Retrieve information about a schedule.
 * Authentication: None
 * Response:
     * HTTP 200 OK: Success
-```json
-{
-    "address": <location address>,
-    "cinema": <cinema friendly name>,
-    "title": <movie title>,
-    "poster": <TODO: movie poster>,
-    "time": <scheduled start time>,
-    "seats": <number of available seats>
-}
-```
+      ```json
+      {
+          "address": <location address>,
+          "cinema": <cinema friendly name>,
+          "title": <movie title>,
+          "poster": <TODO: movie poster>,
+          "time": <scheduled start time>,
+          "seats": <number of available seats>
+      }
+      ```
 
 ### GET /schedule/{schedule id}/seats
 Retrieve the seating and availability information for a scheduled movie.
@@ -163,15 +163,15 @@ Retrieve the seating and availability information for a scheduled movie.
 * Authentication: None
 * Response:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <seat identifier>,
-        "available": True | False
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <seat identifier>,
+              "available": True | False
+          },
+          ...
+      ]
+      ```
 
 ### GET /order/history
 Retrieve a list of bookings for a logged in user (token).
@@ -179,23 +179,23 @@ Retrieve a list of bookings for a logged in user (token).
 * Authentication: Bearer
 * Possible responses:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <ticket ID>,
-        "status": "confirmed" | "tentative" | "cancelled",
-        "time": <ticket movie start time>,
-        "address": <location address>,
-        "cinema": <cinema friendly name>,
-        "seats": [
-            <seat id 1>,
-            <seat id 2>,
-            ...
-        ]
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <ticket ID>,
+              "status": "confirmed" | "tentative" | "cancelled",
+              "time": <ticket movie start time>,
+              "address": <location address>,
+              "cinema": <cinema friendly name>,
+              "seats": [
+                  <seat id 1>,
+                  <seat id 2>,
+                  ...
+              ]
+          },
+          ...
+      ]
+      ```
     * HTTP 400 Bad Request: Missing token.
     * HTTP 401 Unauthorised: Invalid token.
 
@@ -204,23 +204,23 @@ Temporarily reserve a ticket and its accompanying seats for a scheduled movie.
 
 * Authentication: Bearer
 * Expected JSON payload:
-```json
-{
-    "schedule": <schedule ID>,
-    "seats": [
-        <seat id 1>,
-        <seat id 2>,
-        ...
-    ]
-}
-```
+  ```json
+  {
+      "schedule": <schedule ID>,
+      "seats": [
+          <seat id 1>,
+          <seat id 2>,
+          ...
+      ]
+  }
+  ```
 * Possible responses:
     * HTTP 200 OK:
-```json
-{
-    "id": <reserved ticket ID>
-}
-```
+      ```json
+      {
+          "id": <reserved ticket ID>
+      }
+      ```
     * HTTP 400 Bad Request: (see reason)
         * Invalid schedule ID
         * Schedule start time is in the past
@@ -232,11 +232,11 @@ Confirm an order for a reserved movie ticket.
 
 * Authentication: Bearer
 * Expected JSON payload:
-```json
-{
-    "id": <reserved ticket ID>
-}
-```
+  ```json
+  {
+      "id": <reserved ticket ID>
+  }
+  ```
 * Possible responses
     * HTTP 200 OK: Ticket has been successfully reserved
     * HTTP 400 Bad Request: (see reason)
@@ -249,11 +249,11 @@ Cancel an order for a movie ticket. Cancellations are only possible if the start
 
 * Authentication: Bearer
 * Expected JSON payload:
-```json
-{
-    "id": <ticket ID>
-}
-```
+  ```json
+  {
+      "id": <ticket ID>
+  }
+  ```
 * Possible responses
     * HTTP 200 Ok: Ticket has been successfully cancelled.
     * HTTP 400 Bad Request: (see reason)
@@ -269,14 +269,14 @@ Retrieve information about a specific account.
 * Authentication: Bearer
 * Possible responses:
     * HTTP 200 OK: Success
-```json
-{
-    "id": <account ID>,
-    "given": <given name>,
-    "last": <last name>,
-    "email": <email address>
-},
-```
+      ```json
+      {
+          "id": <account ID>,
+          "given": <given name>,
+          "last": <last name>,
+          "email": <email address>
+      },
+      ```
     * HTTP 401 Unauthorised: No permission.
 
 
@@ -286,17 +286,17 @@ Retrieve account IDs that partially match the `name` and/or `email` parts. At le
 * Authentication: Bearer
 * Possible responses:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <account ID>,
-        "given": <given name>,
-        "last": <last name>,
-        "email": <email address>
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <account ID>,
+              "given": <given name>,
+              "last": <last name>,
+              "email": <email address>
+          },
+          ...
+      ]
+      ```
     * HTTP 401 Unauthorised: No permission.
 
 ### PUT /movie
@@ -304,14 +304,14 @@ Add a new movie.
 
 * Authentication: Bearer
 * Expected JSON payload:
-```json
-{
-    "title": <movie title>,
-    "description": <movie description>,
-    "duration": <movie duration in minutes>,
-    "poster": <TODO: Movie poster>
-}
-```
+  ```json
+  {
+      "title": <movie title>,
+      "description": <movie description>,
+      "duration": <movie duration in minutes>,
+      "poster": <TODO: Movie poster>
+  }
+  ```
 
 ### POST /movie/{movie id}
 Update movie detail(s).
@@ -320,11 +320,11 @@ Note: The JSON payload should only state keys and values for the fields being up
 
 * Authentication: Bearer
 * Example JSON payload: Update the description of a movie
-```json
-{
-    "description": <The new movie description>
-}
-```
+  ```json
+  {
+      "description": <The new movie description>
+  }
+  ```
 * Possible responses:
     * HTTP 200 OK: Success
     * HTTP 400 Bad Request: One or more field names are invalid. No changes made.
@@ -340,27 +340,27 @@ Side effect: When marking as unavailable making all tentative/reservation orders
 * Authentication: Bearer
 * Possible responses:
     * HTTP 200 OK: Some schedules for the movie cannot be made unavailable.
-```json
-{
-    "schedule ids": [<schedule id 1>, <schedule id 2>, ...]
-}
-```
+      ```json
+      {
+          "schedule ids": [<schedule id 1>, <schedule id 2>, ...]
+      }
+      ```
     * HTTP 204 No Content: The movie and its future schedules have been successfully marked as unavailable.
     * HTTP 400 Bad Request: Invalid movie ID.
     * HTTP 401 Unauthorised: No permission.
 
 ### DELETE /movie/{movie id}
-Delete a movie. T
+Delete a movie.
 
 * Authentication: Bearer
 * Possible responses:
     * HTTP 204 No Content: Movie and its schedules were successfully deleted.
     * HTTP 400 Bad Request: Schedules with confirmed orders/tickets exist for movie.
-```json
-{
-    "schedule ids": [<schedule id 1>, <schedule id 2>, ...]
-}
-```
+      ```json
+      {
+          "schedule ids": [<schedule id 1>, <schedule id 2>, ...]
+      }
+      ```
     * HTTP 400 Bad Request: Invalid movie ID.
     * HTTP 401 Unauthorised: No permission.
 
@@ -370,31 +370,31 @@ Retrieve the movie schedule for a specific cinema on a date. The `date` paramete
 * Authorisation: Bearer
 * Possible responses:
     * HTTP 200 OK: Success
-```json
-[
-    {
-        "id": <schedule id>,
-        "title": <movie title>,
-        "start": <start time>,
-        "end": <end time>
-    },
-    ...
-]
-```
+      ```json
+      [
+          {
+              "id": <schedule id>,
+              "title": <movie title>,
+              "start": <start time>,
+              "end": <end time>
+          },
+          ...
+      ]
+      ```
 
 ### PUT /schedule
 Add a new scheduled showing for a movie.
 
 * Authorisation: Bearer
 * Expected JSON payload:
-```json
-{
-    "movie": <movie id>,
-    "location": <location id>,
-    "cinema": <cinema id>,
-    "time": <start date time>
-}
-```
+  ```json
+  {
+      "movie": <movie id>,
+      "location": <location id>,
+      "cinema": <cinema id>,
+      "time": <start date time>
+  }
+  ```
 * Possible responses:
     * HTTP 200 OK: Success
     * HTTP 400 Bad Request: (See reason)
@@ -411,11 +411,11 @@ Note: The JSON payload should only state keys and values for the fields being up
 
 * Authorisation: Bearer
 * Example JSON payload: Update the cinema for the scheduled showing
-```json
-{
-    "cinema id": <the new cinema id>
-}
-```
+  ```json
+  {
+      "cinema id": <the new cinema id>
+  }
+  ```
 * Possible responses:
     * HTTP 200 OK: Success
     * HTTP 400 Bad Request: One or more field names are invalid. No changes made.
@@ -427,11 +427,11 @@ Delete a schedule.
 * Authorisation: Bearer
     * HTTP 204 No Content: Schedule successfully deleted.
     * HTTP 400 Bad Request: Confirmed orders/tickets exist for the schedule.
-```json
-{
-    "ids": [<ticket id 1>, <ticket id 2>, ...]
-}
-```
+      ```json
+      {
+          "ids": [<ticket id 1>, <ticket id 2>, ...]
+      }
+      ```
     * HTTP 400 Bad Request: Invalid schedule ID.
     * HTTP 401 Unauthorised: No permission.
 
@@ -440,11 +440,11 @@ Upgrade an accounts role from customer to admin.
 
 * Authorisation: Bearer
 * Expected JSON payload:
-```json
-{
-    "account id": <promotee account id>
-}
-```
+  ```json
+  {
+      "account id": <promotee account id>
+  }
+  ```
 * Possible responses:
     * HTTP 200 OK: Success
     * HTTP 400 Bad Request: (see reason)
