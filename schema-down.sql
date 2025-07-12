@@ -1,5 +1,9 @@
 USE MovieReservation;
 
+DROP EVENT IF EXISTS event_tentative_reservation_cleanup;
+DROP PROCEDURE IF EXISTS proc_cancel_old_tentative_reservations;
+DROP TRIGGER IF EXISTS trig_upd_valid_reservation_cancel;
+
 -- TABLES
 
 DROP TABLE IF EXISTS Reservation;

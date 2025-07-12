@@ -1,10 +1,12 @@
+SET GLOBAL event_scheduler = ON;
+
 CREATE DATABASE IF NOT EXISTS MovieReservation;
 USE MovieReservation;
 
 -- TABLES
 
 CREATE TABLE Movie (
-    id              BIGINT,
+    id              BIGINT NOT NULL AUTO_INCRMENT,
     name            VARCHAR(256) NOT NULL,
     description     VARCHAR(512) NOT NULL,
     duration        INT NOT NULL,  -- Minutes
@@ -19,7 +21,7 @@ CREATE TABLE MovieGenreCategory (
 );
 
 CREATE TABLE MovieGenre (
-    movie_id    BIGINT,
+    movie_id    BIGINT NOT NULL AUTO_INCRMENT,
     genre_name  VARCHAR(16),
     PRIMARY KEY (movie_id, genre_name),
     FOREIGN KEY (movie_id) REFERENCES Movie (id),
@@ -27,13 +29,13 @@ CREATE TABLE MovieGenre (
 );
 
 CREATE TABLE Location (
-    id      BIGINT,
+    id      BIGINT NOT NULL AUTO_INCRMENT,
     address VARCHAR(256) NOT NULL,
     PRIMARY KEY (id)
 );
 
 CREATE TABLE Cinema (
-    id              BIGINT,
+    id              BIGINT NOT NULL AUTO_INCRMENT,
     location_id     BIGINT NOT NULL,
     friendly_name   VARCHAR(32) NOT NULL,
     PRIMARY KEY (id, location_id),
@@ -50,7 +52,7 @@ CREATE TABLE CinemaSeat (
 );
 
 CREATE TABLE User (
-    id              BIGINT,
+    id              BIGINT NOT NULL AUTO_INCRMENT,
     given_name      VARCHAR(128) NOT NULL,
     last_name       VARCHAR(128) NOT NULL,
     email_addr      VARCHAR(256) NOT NULL,
@@ -60,7 +62,7 @@ CREATE TABLE User (
 );
 
 CREATE TABLE Schedule (
-    id                  BIGINT,
+    id                  BIGINT NOT NULL AUTO_INCREMENT,
     cinema_id           BIGINT NOT NULL,
     location_id         BIGINT NOT NULL,
     movie_id            BIGINT NOT NULL,
@@ -74,7 +76,7 @@ CREATE TABLE Schedule (
 );
 
 CREATE TABLE Reservation (
-    id              BIGINT,
+    id              BIGINT NOT NULL AUTO_INCRMENT,
     user_id         BIGINT, -- NULLABLE. Allow walk in customers make reservations
     schedule_id     BIGINT NOT NULL,
     kind            ENUM ("confirmed", "tentative", "cancelled") NOT NULL,
@@ -178,3 +180,49 @@ INSERT INTO Reservation (id, user_id, schedule_id, kind, last_updated) VALUES
     (2, 3,  4, "confirmed", NOW()),
     (3, 4,  1, "confirmed", NOW()),
     (4, 4, 12, "confirmed", NOW());
+
+-- Triggers, procedures & events
+
+DELIMITER //
+
+CREATE TRIGGER trig_upd_valid_reservation_cancel
+BEFORE UPDATE
+ON Reservation
+FOR EACH ROW
+BEGIN
+    -- Ensure the reservation being cancelled is not scheduled in the past.
+    DECLARE error_msg VARCHAR(64);
+    DECLARE scheduled_time DATETIME;
+
+    SELECT sch.start_time INTO scheduled_time
+    FROM Schedule sch
+    WHERE sch.id = OLD.schedule_id
+    LIMIT 1;
+
+    IF scheduled_time < NOW() THEN
+        SET error_msg = CONCAT("Scheduled time ",
+                                DATE_FORMAT(scheduled_time, "%d %m %Y"),
+                                " is in the past");
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = error_msg;
+    END IF;
+END //
+
+CREATE PROCEDURE proc_cancel_old_tentative_reservations()
+COMMENT "Cancel tentative tickets/reservations that have not been updated in over 5 minutes."
+BEGIN
+    UPDATE Reservation
+    SET kind = "cancelled"
+    WHERE kind = "tentative"
+    AND UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(last_updated) > 300;  -- 5 minutes
+END //
+
+CREATE EVENT event_tentative_reservation_cleanup
+ON SCHEDULE
+    EVERY 30 SECOND
+COMMENT "Cancel old tentative reservations every 30 seconds."
+DO
+BEGIN
+    CALL proc_cancel_old_tentative_reservations();
+END //
+
+DELIMITER ;
