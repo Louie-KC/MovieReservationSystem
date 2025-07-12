@@ -6,7 +6,7 @@ USE MovieReservation;
 -- TABLES
 
 CREATE TABLE Movie (
-    id              BIGINT NOT NULL AUTO_INCRMENT,
+    id              BIGINT NOT NULL AUTO_INCREMENT,
     name            VARCHAR(256) NOT NULL,
     description     VARCHAR(512) NOT NULL,
     duration        INT NOT NULL,  -- Minutes
@@ -21,7 +21,7 @@ CREATE TABLE MovieGenreCategory (
 );
 
 CREATE TABLE MovieGenre (
-    movie_id    BIGINT NOT NULL AUTO_INCRMENT,
+    movie_id    BIGINT NOT NULL AUTO_INCREMENT,
     genre_name  VARCHAR(16),
     PRIMARY KEY (movie_id, genre_name),
     FOREIGN KEY (movie_id) REFERENCES Movie (id),
@@ -29,13 +29,13 @@ CREATE TABLE MovieGenre (
 );
 
 CREATE TABLE Location (
-    id      BIGINT NOT NULL AUTO_INCRMENT,
+    id      BIGINT NOT NULL AUTO_INCREMENT,
     address VARCHAR(256) NOT NULL,
     PRIMARY KEY (id)
 );
 
 CREATE TABLE Cinema (
-    id              BIGINT NOT NULL AUTO_INCRMENT,
+    id              BIGINT NOT NULL AUTO_INCREMENT,
     location_id     BIGINT NOT NULL,
     friendly_name   VARCHAR(32) NOT NULL,
     PRIMARY KEY (id, location_id),
@@ -52,7 +52,7 @@ CREATE TABLE CinemaSeat (
 );
 
 CREATE TABLE User (
-    id              BIGINT NOT NULL AUTO_INCRMENT,
+    id              BIGINT NOT NULL AUTO_INCREMENT,
     given_name      VARCHAR(128) NOT NULL,
     last_name       VARCHAR(128) NOT NULL,
     email_addr      VARCHAR(256) NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE Schedule (
 );
 
 CREATE TABLE Reservation (
-    id              BIGINT NOT NULL AUTO_INCRMENT,
+    id              BIGINT NOT NULL AUTO_INCREMENT,
     user_id         BIGINT, -- NULLABLE. Allow walk in customers make reservations
     schedule_id     BIGINT NOT NULL,
     kind            ENUM ("confirmed", "tentative", "cancelled") NOT NULL,
