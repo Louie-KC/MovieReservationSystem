@@ -49,11 +49,58 @@ Admin: Aux
 ### POST /account/register
 Register a new user account.
 
+* Authentication: None
+* Expected JSON payload:
+  ```json
+  {
+      "email": <email address>,
+      "password": <password>
+  }
+  ```
+* Possible responses
+    * HTTP 200 OK: Success
+    * HTTP 400 Bad Request: (see reason)
+        * Invalid email address format
+        * Password length not in range 4..128
+
 ### POST /account/login
-Authenticate a user. Return auth token.
+Authenticate a user and receive an authentication token.
+
+* Authentication: None
+* Expected JSON payload:
+  ```json
+  {
+      "email": <email address>,
+      "password": <password>
+  }
+* Possible responses
+    * HTTP 200 OK: Success
+      ```json
+      {
+        "token": <auth token>
+      }
+      ```
+    * HTTP 400 Bad Request: (see reason)
+        * Invalid email address format
+        * Incorrect email & password pair
 
 ### POST /account/change-password
 Change the password of the logged in user (token).
+
+* Authentication: Bearer
+* Expected JSON payload:
+  ```json
+  {
+      "old": <old password>,
+      "new": <new password>
+  }
+  ```
+* Possible responses
+    * HTTP 200 OK: Success
+    * HTTP 400 Bad Request: (see reason)
+        * The provided old password is incorrect
+        * The old & new password are the same
+        * The new password length not in range 4..128
 
 ### GET /location
 Retrieve a list of all locations.
