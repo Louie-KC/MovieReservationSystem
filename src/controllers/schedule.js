@@ -1,35 +1,39 @@
 import asyncHandler from 'express-async-handler';
 
-export const get_schedule_query = asyncHandler(async (req, res, next) => {
-    const query_loc_id = req.query.location_id;
-    const query_date = req.query.date;
-
-    res.send(`NOT IMPLEMENTED: get_schedule_query. location ${query_loc_id}, date ${query_date}`);
+// GET /schedule?location={location id}&date={YYYY-MM-DD}
+export const getScheduleQuery = asyncHandler(async (req, res, next) => {
+    const { location, date } = req.query;
+    res.send(`NOT IMPLEMENTED: getScheduleQuery. location ${location}, date ${date}`);
 })
 
-export const get_schedule_by_id = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: get_schedule_by_id ${req.params.schedule_id}`);
+// GET /schedule/{schedule_id}
+export const getScheduleById = asyncHandler(async (req, res, next) => {
+    res.send(`NOT IMPLEMENTED: getScheduleById ${req.params.schedule_id}`);
 });
 
-export const get_schedule_seats_by_id = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: get_schedule_seats_by_id ${req.params.schedule_id}`);
+// GET /schedule/{schedule_id}/seats
+export const getScheduleSeatsById = asyncHandler(async (req, res, next) => {
+    res.send(`NOT IMPLEMENTED: getScheduleSeatsById ${req.params.schedule_id}`);
 });
 
-export const admin_get_cinema_schedule = asyncHandler(async (req, res, next) => {
-    const req_loc_id = req.params.location_id;
-    const req_cinema_id = req.params.cinema_id;
-    const query_date = req.query.date;
-    res.send(`NOT IMPLEMENTED: admin_get_schedule_for_cinema. loc ${req_loc_id}, cinema ${req_cinema_id}, date ${query_date}`);
+// GET /schedule/{location_id}/{cinema_id}
+export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
+    const { location_id, cinema_id } = req.params;
+    const queryDate = req.query.date;
+    res.send(`NOT IMPLEMENTED: adminGetCinemaSchedule. loc ${location_id}, cinema ${cinema_id}, date ${queryDate}`);
 });
 
-export const admin_put_new_schedule = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: admin_put_new_schedule");
+// PUT /schedule
+export const adminPutNewSchedule = asyncHandler(async (req, res, next) => {
+    res.send("NOT IMPLEMENTED: adminPutNewSchedule");
 });
 
-export const admin_post_update_schedule = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: admin_post_update_schedule");
+// POST /schedule/{schedule_id}
+export const adminPostUpdateSchedule = asyncHandler(async (req, res, next) => {
+    res.send("NOT IMPLEMENTED: adminPostUpdateSchedule");
 });
 
-export const admin_delete_schedule = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: admin_delete_schedule");
+// DELETE /schedule/{schedule_id}
+export const adminDeleteSchedule = asyncHandler(async (req, res, next) => {
+    res.send("NOT IMPLEMENTED: adminDeleteSchedule");
 });

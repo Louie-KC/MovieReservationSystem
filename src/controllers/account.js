@@ -1,32 +1,30 @@
 import asyncHandler from 'express-async-handler';
 
 // POST /account/register
-export const post_account_register = asyncHandler(async (req, res, next) => {
+export const postAccountRegister = asyncHandler(async (req, res, next) => {
     const email = req.params.email;
-    res.send(`NOT IMPLEMENTED: post_account_register. email ${email}`);
+    res.send(`NOT IMPLEMENTED: postAccountRegister. email ${email}`);
 });
 
 // POST /account/login
-export const post_account_login = asyncHandler(async (req, res, next) => {
+export const postAccountLogin = asyncHandler(async (req, res, next) => {
     const email = req.params.email;
-    res.send(`NOT IMPLEMENTED: post_account_login. email ${email}`);
+    res.send(`NOT IMPLEMENTED: postAccountLogin. email ${email}`);
 })
 
 // POST /account/change-password
-export const post_account_change_password = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: post_account_change_password");
+export const postAccountChangePassword = asyncHandler(async (req, res, next) => {
+    res.send("NOT IMPLEMENTED: postAccountChangePassword");
 })
 
 // GET /account/{account_id}
-export const admin_get_account_by_id = asyncHandler(async (req, res, next) => {
-    const query_account_id = req.params.account_id;
-    res.send(`NOT IMPLEMENTED: admin_get_account_by_id. location ${query_account_id}`);
+export const adminGetAccountById = asyncHandler(async (req, res, next) => {
+    const queryAccountId = req.params.account_id;
+    res.send(`NOT IMPLEMENTED: adminGetAccountById. location ${queryAccountId}`);
 })
 
 // GET /account?name={name}&email={email}
-export const admin_get_account_query = asyncHandler(async (req, res, next) => {
-    const query_name_part = req.query.name;
-    const query_email_part = req.query.email;
-    res.send(`NOT IMPLEMENTED: admin_get_account_query. 
-        name ${query_name_part}, email ${query_email_part}`);
+export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
+    const { name, email } = req.query;
+    res.send(`NOT IMPLEMENTED: adminGetAccountQuery. name ${name}, email ${email}`);
 });

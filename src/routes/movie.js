@@ -2,16 +2,16 @@ import { Router } from 'express';
 
 import * as controller from '../controllers/movie.js';
 
-export const movie_router = Router();
+export const movieRouter = Router();
 
 // No authorisation
 
-movie_router.get("", controller.get_movie_query);
-movie_router.get("/:movie_id", controller.get_movie_by_id);
+movieRouter.get("", controller.getMovieQuery);
+movieRouter.get("/:movie_id", controller.getMovieById);
 
 // Admin only
 
-movie_router.put("", controller.admin_put_new_movie);
-movie_router.post(":movie_id", controller.admin_post_update_movie);
-movie_router.patch(":movie_id", controller.admin_patch_movie_availability);
-movie_router.delete(":movie_id", controller.admin_delete_movie_by_id);
+movieRouter.put("", controller.adminPutNewMovie);
+movieRouter.post(":movie_id", controller.adminPostUpdateMovie);
+movieRouter.patch(":movie_id", controller.adminPatchMovieAvailability);
+movieRouter.delete(":movie_id", controller.adminDeleteMovieById);
