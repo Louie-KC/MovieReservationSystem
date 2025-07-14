@@ -7,7 +7,7 @@ USE MovieReservation;
 
 CREATE TABLE Movie (
     id              BIGINT NOT NULL AUTO_INCREMENT,
-    name            VARCHAR(256) NOT NULL,
+    title           VARCHAR(256) NOT NULL,
     description     VARCHAR(512) NOT NULL,
     duration        INT NOT NULL,  -- Minutes
     poster_image    BLOB,  -- Nullable
@@ -87,7 +87,7 @@ CREATE TABLE Reservation (
 );
 
 -- Devtest placeholder data
-INSERT INTO Movie (id, name, description, duration, poster_image, available) VALUES
+INSERT INTO Movie (id, title, description, duration, poster_image, available) VALUES
     (1, "Test Movie 1", "Placeholder description for Test Movie 1", 90, NULL, true),
     (2, "Test Movie 2", "Placeholder description for Test Movie 2", 110, NULL, true);
 

@@ -1,13 +1,52 @@
 import asyncHandler from 'express-async-handler';
 
+import { Movie } from '../models/movie.js';
+
 // GET /movie?genre={genre}
 export const getMovieQuery = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: getMovieQuery. genre ${req.query.genre}`);
+    const { genre } = req.query;
+
+    // TODO: param verificaiton
+    
+    try {
+        const movies = genre
+            ? await Movie.findByGenre(genre)
+            : await Movie.findAll();
+
+        if (!movies) {
+            console.log("getMovieQuery: Query error. genre", genre);
+            res.status(500);
+            next();
+            return;
+        }
+
+        res.status(200).json(movies);
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
 })
 
 // GET /movie/{movie_id}
 export const getMovieById = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: getMovieById ${req.params.movie_id}`);
+    const movieId = req.params.movie_id;
+
+    // TODO: param verification
+
+    try {
+        const movie = await Movie.findByID(movieId);
+        if (!movie) {
+            res.status(404);
+            next();
+            return;
+        }
+
+        delete movie.id;  // id known in request
+        res.status(200).json(movie);
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
 });
 
 // PUT /movie

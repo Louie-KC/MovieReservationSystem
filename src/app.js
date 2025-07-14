@@ -4,6 +4,7 @@ import { locationRouter } from './routes/location.js';
 import { movieRouter } from './routes/movie.js';
 import { orderRouter } from './routes/order.js';
 import { scheduleRouter } from './routes/schedule.js';
+import { dbInit, dbConnPool } from './services/database.js';
 
 const PORT = 8080
 
@@ -19,6 +20,8 @@ app.use('/location', locationRouter);
 app.use('/movie', movieRouter);
 app.use('/order', orderRouter);
 app.use('/schedule', scheduleRouter);
+
+await dbInit();
 
 app.listen(PORT, () => {
     console.log(`Movie Reservation Service listening to port ${PORT}`)    
