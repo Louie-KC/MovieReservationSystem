@@ -1,12 +1,17 @@
 import asyncHandler from 'express-async-handler';
 
+import { Check, verify } from '../utils/checker.js';
 import { Movie } from '../models/movie.js';
 
 // GET /movie?genre={genre}
 export const getMovieQuery = asyncHandler(async (req, res, next) => {
     const { genre } = req.query;
 
-    // TODO: param verificaiton
+    if (genre && !verify(genre, [Check.IS_ALPHABETICAL, Check.NO_SEMICOLON])) {
+        res.status(400).json({reason: "Invalid genre value"});
+        next();
+        return;
+    }
     
     try {
         const movies = genre
@@ -31,10 +36,16 @@ export const getMovieQuery = asyncHandler(async (req, res, next) => {
 export const getMovieById = asyncHandler(async (req, res, next) => {
     const movieId = req.params.movie_id;
 
-    // TODO: param verification
+    if (!verify(movieId, [Check.IS_ONLY_DIGITS])) {
+        res.status(400).json({reason: "Invalid movie id"});
+        next();
+        return;
+    }
 
+    const movieIdNumber = +movieId;
+    
     try {
-        const movie = await Movie.findByID(movieId);
+        const movie = await Movie.findByID(movieIdNumber);
         if (!movie) {
             res.status(404);
             next();

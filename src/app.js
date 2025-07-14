@@ -4,7 +4,8 @@ import { locationRouter } from './routes/location.js';
 import { movieRouter } from './routes/movie.js';
 import { orderRouter } from './routes/order.js';
 import { scheduleRouter } from './routes/schedule.js';
-import { dbInit, dbConnPool } from './services/database.js';
+import { dbInit } from './services/database.js';
+import { checkerInitValid } from './utils/checker.js';
 
 const PORT = 8080
 
@@ -20,6 +21,10 @@ app.use('/location', locationRouter);
 app.use('/movie', movieRouter);
 app.use('/order', orderRouter);
 app.use('/schedule', scheduleRouter);
+
+if (!checkerInitValid()) {
+    process.exit(1);
+}
 
 await dbInit();
 
