@@ -62,7 +62,28 @@ export const getMovieById = asyncHandler(async (req, res, next) => {
 
 // PUT /movie
 export const adminPutNewMovie = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: adminPutNewMovie`);
+    // TODO: Identify user by token. Verify user is admin.
+    
+    if (!req.body || !Movie.validateFields(req.body)) {
+        res.status(400).json({ reason: "Invalid body" });
+        next();
+        return;
+    }
+    
+    const movie = new Movie(req.body);
+    const result = await movie.saveNewInDb();
+
+    if (!result.movie_succeeded) {
+        res.status(500);
+        next();
+        return;
+    }
+
+    if (result.fail.length > 0) {
+        res.status(400).json({ reason: `invalid genre(s): ${result.fail}` });
+    } else {
+        res.status(201).send();
+    }
 });
 
 // POST /movie/{movie_id}
