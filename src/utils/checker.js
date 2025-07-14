@@ -1,24 +1,26 @@
 
-const noSemiColon = (value) => value.indexOf(';') === -1;
+export const noSemiColon = (value) => value.indexOf(';') === -1;
 
-const isOnlyDigits = (value) => /^[0-9]+$/.test(value);
+export const isOnlyDigits = (value) => /^[0-9]+$/.test(value);
 
-const isAlphabetical = (value) => typeof value === "string" && /^[a-zA-Z ]*$/.test(value);
+export const isAlphabetical = (value) => typeof value === "string"
+    && /^[a-zA-Z ]*$/.test(value);
 
-const isAlphanumerical = (value) => typeof value === "string" && /^[a-zA-Z0-9 ]*$/.test(value);
+export const isAlphanumerical = (value) => typeof value === "string"
+    && /^[a-zA-Z0-9 ]*$/.test(value);
 
-const isAlphabeticalArray = (value) => Array.isArray(value)
+export const isAlphabeticalArray = (value) => Array.isArray(value)
     && value.map(v => isAlphabetical(v))
-            .reduce((a, b) => a && b);
+            .reduce((a, b) => a && b, true);
 
-const isAlphanumericalArray = (value) => Array.isArray(value)
+export const isAlphanumericalArray = (value) => Array.isArray(value)
     && value.map(v => isAlphanumerical(v))
-            .reduce((a, b) => a && b);
+            .reduce((a, b) => a && b, true);
 
-const isPositiveNumber = (value) => Math.sign(value) === 1;
+export const isPositiveNumber = (value) => Math.sign(value) === 1;
 
-const isValidPassword = (value) => typeof value === "string"
-    && /^(?=.*?[a-z])(?=.*?[a-z])(?=.*?[0-9]).{8,128}$/.test(value);
+export const isValidPassword = (value) => typeof value === "string"
+    && /^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9]).{8,128}$/.test(value);
 
 const checkFns = [
     noSemiColon,
@@ -45,7 +47,7 @@ export const Check = Object.freeze({
 export const verify = (value, checks) => {
     return value !== undefined
         && value !== null
-        && checks.map(check => checkFns[check](value)).reduce((a, b) => a && b);
+        && checks.map(check => checkFns[check](value)).reduce((a, b) => a && b, true);
 };
 
 export const checkerInitValid = () => {
