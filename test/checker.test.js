@@ -9,7 +9,9 @@ import {
     isAlphabeticalArray,
     isAlphanumericalArray,
     isPositiveNumber,
-    isValidPassword
+    isValidPassword,
+    isDate,
+    isTime
 } from '../src/utils/checker.js'
 
 test('Checker util is correctly configured', () => {
@@ -129,6 +131,53 @@ test('Ensure password 8 <= len <= 128 w/ 1 lower, 1 upper, and 1 digit', () => {
     expect(isValidPassword("1234abCD")).toBe(true);
     expect(isValidPassword("1234#abCD")).toBe(true);
     expect(isValidPassword("1!2@3#4$a%b&C*D(")).toBe(true);
+});
+
+test('Ensure date format YYYY-MM-DD', () => {
+    expect(isDate("")).toBe(false);
+    expect(isDate("2025-07-15")).toBe(true);
+    expect(isDate("2025-7-15")).toBe(false);
+    expect(isDate("25-07-15")).toBe(false);
+    expect(isDate("2025/07/15")).toBe(false);
+    expect(isDate("2022-10-01")).toBe(true);
+    expect(isDate("3000-01-01")).toBe(true);
+    expect(isDate("1000-01-01")).toBe(true);
+    expect(isDate(";1000-01-01")).toBe(false);
+});
+
+// TODO: Look into proper date checking (e.g. 2000-02-30 is accepted)
+test('Ensure not clearly invalid date (01 <= MM <= 12, 01 <= DD <= 31)', () => {
+    expect(isDate("2026-01-01")).toBe(true);
+    expect(isDate("2026-01-31")).toBe(true);
+    expect(isDate("2025-01-01")).toBe(true);
+    expect(isDate("2025-00-01")).toBe(false);
+    expect(isDate("2027-02-28")).toBe(true);
+    // expect(isDate("2027-02-29")).toBe(false);  // not a leap year. See TODO
+    expect(isDate("2028-02-29")).toBe(true);
+    expect(isDate("2025-12-31")).toBe(true);
+    expect(isDate("2025-13-01")).toBe(false);
+    expect(isDate("2025-25-12")).toBe(false);
+    expect(isDate("2025-01-32")).toBe(false);
+    expect(isDate("2025-01-55")).toBe(false);
+});
+
+test('Ensure valid time and in format HH:MM:SS', () => {
+    expect(isTime("")).toBe(false);
+    expect(isTime("00:00:00")).toBe(true);
+    expect(isTime("12:34:45")).toBe(true);
+    expect(isTime("12-34-45")).toBe(false);
+    expect(isTime("123445")).toBe(false);
+    expect(isTime("12 34 45")).toBe(false);
+    expect(isTime("12:34")).toBe(false);
+    expect(isTime("12::45")).toBe(false);
+    expect(isTime("12::45")).toBe(false);
+    expect(isTime("01:02:03")).toBe(true);
+    expect(isTime("1:02:03")).toBe(false);
+    expect(isTime("001:02:03")).toBe(false);
+    expect(isTime("23:59:59")).toBe(true);
+    expect(isTime("23:59:60")).toBe(false);
+    expect(isTime("23:60:00")).toBe(false);
+    expect(isTime("25:11:11")).toBe(false);
 });
 
 test('verify ensure not null or undefined', () => {

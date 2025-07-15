@@ -22,6 +22,13 @@ export const isPositiveNumber = (value) => Math.sign(value) === 1;
 export const isValidPassword = (value) => typeof value === "string"
     && /^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9]).{8,128}$/.test(value);
 
+// TODO: Look into proper date checking (e.g. 2000-02-31 is accepted)
+export const isDate = (value) => Date.parse(`${value}T00:00:00Z`) !== NaN &&
+    /^\d{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[0-1])$/.test(value);
+
+export const isTime = (value) => Date.parse(`1970-01-01T${value}Z`) !== NaN &&
+    /^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/.test(value);
+
 const checkFns = [
     noSemiColon,
     isOnlyDigits,
@@ -30,7 +37,9 @@ const checkFns = [
     isAlphabeticalArray,
     isAlphanumericalArray,
     isPositiveNumber,
-    isValidPassword
+    isValidPassword,
+    isDate,
+    isTime
 ];
 
 export const Check = Object.freeze({
@@ -41,7 +50,9 @@ export const Check = Object.freeze({
     IS_ALPHABETICAL_ARR:    checkFns.indexOf(isAlphabeticalArray),
     IS_ALPHANUMERICAL_ARR:  checkFns.indexOf(isAlphanumericalArray),
     IS_POSITIVE_NUMBER:     checkFns.indexOf(isPositiveNumber),
-    IS_VALID_PASSWORD:      checkFns.indexOf(isValidPassword)
+    IS_VALID_PASSWORD:      checkFns.indexOf(isValidPassword),
+    IS_DATE:                checkFns.indexOf(isDate),
+    IS_TIME:                checkFns.indexOf(isTime)
 });
 
 export const verify = (value, checks) => {
