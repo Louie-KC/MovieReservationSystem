@@ -1,21 +1,16 @@
 import { dbConnPool } from "../services/database.js";
 
 export class Location {
-    id;
-    address;
-
-    constructor(data) {
-        this.id = data.id;
-        this.address = data.address;
-    }
+    // No constructor or data validation function.
+    // Not to be taken as input from a client request.
 
     static async findAll() {
         try {
             const [rows, _] = await dbConnPool.execute(
-                "SELECT * \
+                "SELECT id, address \
                 FROM Location"
             );
-            return rows.map((row) => new Location(row));
+            return rows;
         } catch (err) {
             console.log(err);
             return null;
