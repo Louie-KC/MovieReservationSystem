@@ -6,6 +6,7 @@ DROP TRIGGER IF EXISTS trig_upd_valid_reservation_cancel;
 
 -- TABLES
 
+DROP TABLE IF EXISTS ReservationSeat;
 DROP TABLE IF EXISTS Reservation;
 DROP TABLE IF EXISTS ScheduleSeries;
 DROP TABLE IF EXISTS Schedule;

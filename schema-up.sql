@@ -43,11 +43,13 @@ CREATE TABLE Cinema (
 );
 
 CREATE TABLE CinemaSeat (
-    id          CHAR(4),
-    cinema_id   BIGINT,
-    location_id BIGINT,
+    id          BIGINT,
+    cinema_id   BIGINT  NOT NULL,
+    location_id BIGINT  NOT NULL,
+    seat_row    CHAR(1) NOT NULL,
+    seat_number INT     NOT NULL,
     kind        ENUM ('regular', 'luxury') NOT NULL,
-    PRIMARY KEY (id, cinema_id, location_id),
+    PRIMARY KEY (id),
     FOREIGN KEY (cinema_id, location_id) REFERENCES Cinema (id, location_id)
 );
 
@@ -86,6 +88,14 @@ CREATE TABLE Reservation (
     FOREIGN KEY (schedule_id) REFERENCES Schedule (id)
 );
 
+CREATE TABLE ReservationSeat (
+    reservation_id  BIGINT,
+    seat_id         BIGINT,
+    PRIMARY KEY (reservation_id, seat_id),
+    FOREIGN KEY (reservation_id) REFERENCES Reservation (id),
+    FOREIGN KEY (seat_id) REFERENCES CinemaSeat (id)
+);
+
 -- Devtest placeholder data
 INSERT INTO Movie (id, title, description, duration, poster_image, available) VALUES
     (1, "Test Movie 1", "Placeholder description for Test Movie 1", 90, NULL, true),
@@ -116,42 +126,42 @@ INSERT INTO Cinema (id, location_id, friendly_name) VALUES
     (3, 1, "Cinema 3"),
     (1, 2, "Cinema 1");
 
-INSERT INTO CinemaSeat (id, cinema_id, location_id, kind) VALUES
-    ('-A01', 1, 1, "regular"),
-    ('-A02', 1, 1, "regular"),
-    ('-A03', 1, 1, "regular"),
-    ('-A04', 1, 1, "regular"),
-    ('-B01', 1, 1, "regular"),
-    ('-B02', 1, 1, "regular"),
-    ('-B03', 1, 1, "regular"),
-    ('-B04', 1, 1, "regular"),
+INSERT INTO CinemaSeat (id, cinema_id, location_id, seat_row, seat_number, kind) VALUES
+    ( 1, 1, 1, 'A', 1, "regular"),
+    ( 2, 1, 1, 'A', 2, "regular"),
+    ( 3, 1, 1, 'A', 3, "regular"),
+    ( 4, 1, 1, 'A', 4, "regular"),
+    ( 5, 1, 1, 'B', 1, "regular"),
+    ( 6, 1, 1, 'B', 2, "regular"),
+    ( 7, 1, 1, 'B', 3, "regular"),
+    ( 8, 1, 1, 'B', 4, "regular"),
 
-    ('-A01', 2, 1, "luxury"),
-    ('-A02', 2, 1, "luxury"),
-    ('-A03', 2, 1, "luxury"),
-    ('-A04', 2, 1, "luxury"),
-    ('-B01', 2, 1, "luxury"),
-    ('-B02', 2, 1, "luxury"),
-    ('-B03', 2, 1, "luxury"),
-    ('-B04', 2, 1, "luxury"),
+    ( 9, 2, 1, 'A', 1, "luxury"),
+    (10, 2, 1, 'A', 2, "luxury"),
+    (11, 2, 1, 'A', 3, "luxury"),
+    (12, 2, 1, 'A', 4, "luxury"),
+    (13, 2, 1, 'B', 1, "luxury"),
+    (14, 2, 1, 'B', 2, "luxury"),
+    (15, 2, 1, 'B', 3, "luxury"),
+    (16, 2, 1, 'B', 4, "luxury"),
     
-    ('-A01', 3, 1, "luxury"),
-    ('-A02', 3, 1, "luxury"),
-    ('-A03', 3, 1, "luxury"),
-    ('-A04', 3, 1, "luxury"),
-    ('-B01', 3, 1, "regular"),
-    ('-B02', 3, 1, "regular"),
-    ('-B03', 3, 1, "regular"),
-    ('-B04', 3, 1, "regular"),
+    (17, 3, 1, 'A', 1, "luxury"),
+    (18, 3, 1, 'A', 2, "luxury"),
+    (19, 3, 1, 'A', 3, "luxury"),
+    (20, 3, 1, 'A', 4, "luxury"),
+    (21, 3, 1, 'B', 1, "regular"),
+    (22, 3, 1, 'B', 2, "regular"),
+    (23, 3, 1, 'B', 3, "regular"),
+    (24, 3, 1, 'B', 4, "regular"),
 
-    ('-A01', 1, 2, "luxury"),
-    ('-A02', 1, 2, "luxury"),
-    ('-A03', 1, 2, "luxury"),
-    ('-A04', 1, 2, "luxury"),
-    ('-B01', 1, 2, "luxury"),
-    ('-B02', 1, 2, "luxury"),
-    ('-B03', 1, 2, "luxury"),
-    ('-B04', 1, 2, "luxury");
+    (25, 1, 2, 'A', 1, "luxury"),
+    (26, 1, 2, 'A', 2, "luxury"),
+    (27, 1, 2, 'A', 3, "luxury"),
+    (28, 1, 2, 'A', 4, "luxury"),
+    (29, 1, 2, 'B', 1, "luxury"),
+    (30, 1, 2, 'B', 2, "luxury"),
+    (31, 1, 2, 'B', 3, "luxury"),
+    (32, 1, 2, 'B', 4, "luxury");
 
 INSERT INTO User (id, given_name, last_name, email_addr, password_hash, kind) VALUES
     (1, "Test admin 1", "last1", "admin1@admin.com", 0, "admin"),
@@ -180,6 +190,18 @@ INSERT INTO Reservation (id, user_id, schedule_id, kind, last_updated) VALUES
     (2, 3,  4, "confirmed", NOW()),
     (3, 4,  1, "confirmed", NOW()),
     (4, 4, 12, "confirmed", NOW());
+
+INSERT INTO ReservationSeat (reservation_id, seat_id) VALUES
+    -- All of the below are for reservations in location 1 cinema 1.
+    (1, 1),
+    (1, 2),
+    (1, 3),
+    (2, 1),
+    (3, 8),
+    (4, 2),
+    (4, 3),
+    (4, 6),
+    (4, 7);
 
 -- Triggers, procedures & events
 
