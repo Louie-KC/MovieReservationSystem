@@ -105,4 +105,37 @@ export class Schedule {
             return null;
         }
     }
+
+    /**
+     * ADMIN
+     * 
+     * Retrieve all schedules for a specific cinema for a date.
+     * 
+     * @param {number} locationId 
+     * @param {number} cinemaId 
+     * @param {string} date YYYY-MM-DD
+     * @returns 
+     */
+    static async findCinemaSchedule(locationId, cinemaId, date) {
+        try {
+            const [rows, _] = await dbConnPool.execute(
+                `SELECT
+                    s.id,
+                    m.title,
+                    s.start_time as 'start',
+                    DATE_ADD(s.start_time, INTERVAL m.duration MINUTE) as 'end'
+                FROM Schedule s
+                INNER JOIN Movie m ON s.movie_id = m.id
+                WHERE s.location_id = ?
+                AND s.cinema_id = ?
+                AND DATE(s.start_time) = ?`,
+                [locationId, cinemaId, date]
+            );
+            
+            return rows;
+        } catch (err) {
+            console.log(err);
+            return null;
+        }
+    }
 }

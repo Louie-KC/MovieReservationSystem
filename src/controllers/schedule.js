@@ -68,11 +68,38 @@ export const getScheduleSeatsById = asyncHandler(async (req, res, next) => {
     }
 });
 
-// GET /schedule/{location_id}/{cinema_id}
+// GET /schedule/{location_id}/{cinema_id}?date={YYYY-MM-DD}
 export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
     const { location_id, cinema_id } = req.params;
-    const queryDate = req.query.date;
-    res.send(`NOT IMPLEMENTED: adminGetCinemaSchedule. loc ${location_id}, cinema ${cinema_id}, date ${queryDate}`);
+    const date = req.query.date;
+
+    // TODO: Verify requester is admin once accounts implemented.
+
+    if (!verify(location_id, [Check.IS_ONLY_DIGITS])) {
+        res.status(400).json({ reason: `location_id (${locationId}) is non-numeric` });
+        return;
+    }
+
+    if (!verify(cinema_id, [Check.IS_ONLY_DIGITS])) {
+        res.status(400).json({ reason: `cinema_id (${cinemaId}) is non-numeric` });
+        return;
+    }
+
+    if (!verify(date, [Check.IS_DATE])) {
+        res.status(400).json({ reason: "Invalid or missing date query parameter" });
+        return;
+    }
+
+    const locationIdNumber = +location_id;
+    const cinemaIdNumber = +cinema_id;
+
+    const cinemaSchedule = await Schedule.findCinemaSchedule(locationIdNumber, cinemaIdNumber, date);
+    if (!cinemaSchedule) {
+        res.status(500).send();
+        return;
+    }
+
+    res.status(200).json(cinemaSchedule);
 });
 
 // PUT /schedule
