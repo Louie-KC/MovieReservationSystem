@@ -8,7 +8,7 @@ export const scheduleRouter = Router();
 
 scheduleRouter.get("", controller.getScheduleQuery);
 scheduleRouter.get("/:schedule_id", controller.getScheduleById);
-scheduleRouter.get("/:schedule_id/seats", controller.getScheduleById);
+scheduleRouter.get("/:schedule_id/seats", controller.getScheduleSeatsById);
 
 // Admin only
 
