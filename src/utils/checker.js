@@ -19,6 +19,9 @@ export const isAlphanumericalArray = (value) => Array.isArray(value)
 
 export const isPositiveNumber = (value) => Math.sign(value) === 1;
 
+export const isEmail = (value) => typeof value === "string"
+    && /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value);
+
 export const isValidPassword = (value) => typeof value === "string"
     && /^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9]).{8,128}$/.test(value);
 
@@ -37,6 +40,7 @@ const checkFns = [
     isAlphabeticalArray,
     isAlphanumericalArray,
     isPositiveNumber,
+    isEmail,
     isValidPassword,
     isDate,
     isTime
@@ -50,6 +54,7 @@ export const Check = Object.freeze({
     IS_ALPHABETICAL_ARR:    checkFns.indexOf(isAlphabeticalArray),
     IS_ALPHANUMERICAL_ARR:  checkFns.indexOf(isAlphanumericalArray),
     IS_POSITIVE_NUMBER:     checkFns.indexOf(isPositiveNumber),
+    IS_EMAIL:               checkFns.indexOf(isEmail),
     IS_VALID_PASSWORD:      checkFns.indexOf(isValidPassword),
     IS_DATE:                checkFns.indexOf(isDate),
     IS_TIME:                checkFns.indexOf(isTime)

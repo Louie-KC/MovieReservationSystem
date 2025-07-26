@@ -9,6 +9,7 @@ import {
     isAlphabeticalArray,
     isAlphanumericalArray,
     isPositiveNumber,
+    isEmail,
     isValidPassword,
     isDate,
     isTime
@@ -117,6 +118,22 @@ test('Ensure positive numbers', () => {
     expect(isPositiveNumber("-0.01")).toBe(false);
     expect(isPositiveNumber("-55")).toBe(false);
 });
+
+test('Ensure valid email address format', () => {
+    expect(isEmail("")).toBe(false);
+    expect(isEmail("Abcdef7")).toBe(false);
+    expect(isEmail("@")).toBe(false);
+    expect(isEmail("a@.com")).toBe(false);
+    expect(isEmail("@a.com")).toBe(false);
+    expect(isEmail("a@a.com")).toBe(true);
+    expect(isEmail("abc@def.com")).toBe(true);
+    expect(isEmail("a.b.cd@efg.com")).toBe(true);
+    expect(isEmail("abcd@efg.com.au")).toBe(true);
+    expect(isEmail("ab-c-d@efg.com")).toBe(true);
+    expect(isEmail("ABCD@EFG.com")).toBe(true);    
+    expect(isEmail("ABCabcABCabcABCaaa@DEFDEF.com")).toBe(true);    
+    expect(isEmail("real.e-mail.1@domain-name.co.uk")).toBe(true);
+})
 
 test('Ensure password 8 <= len <= 128 w/ 1 lower, 1 upper, and 1 digit', () => {
     expect(isValidPassword("")).toBe(false);
