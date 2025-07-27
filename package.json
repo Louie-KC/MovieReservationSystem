@@ -15,5 +15,9 @@
     "express-async-handler": "^1.2.0",
     "jest": "^30.0.4",
     "mysql2": "^3.14.2"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }

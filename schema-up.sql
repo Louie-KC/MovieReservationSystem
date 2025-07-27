@@ -58,9 +58,10 @@ CREATE TABLE User (
     given_name      VARCHAR(128) NOT NULL,
     last_name       VARCHAR(128) NOT NULL,
     email_addr      VARCHAR(256) NOT NULL,
-    password_hash   BIGINT NOT NULL,  -- TODO: Revisit once hash decided upon
+    password_hash   CHAR(60) NOT NULL,
     kind            ENUM ("admin", "customer") NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE (email_addr)
 );
 
 CREATE TABLE Schedule (

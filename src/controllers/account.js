@@ -1,20 +1,95 @@
 import asyncHandler from 'express-async-handler';
+import jwt from "jsonwebtoken";
+import { Account } from '../models/account.js';
 
 // POST /account/register
 export const postAccountRegister = asyncHandler(async (req, res, next) => {
-    const email = req.params.email;
-    res.send(`NOT IMPLEMENTED: postAccountRegister. email ${email}`);
+    if (!req.body || !Account.validateFieldsRegister(req.body)) {
+        res.status(400).json({ reason: "Invalid registration body" })
+        return;
+    }
+    
+    const result = await Account.registerInDb(req.body);
+    if (result.err) {
+        res.status(500).send();
+        return;
+    }
+    if (result.emailAlreadyTaken) {
+        res.status(400).json({ reason: "Email address already in use" });
+        return;
+    }
+    
+    res.status(200).send();
 });
 
 // POST /account/login
 export const postAccountLogin = asyncHandler(async (req, res, next) => {
-    const email = req.params.email;
-    res.send(`NOT IMPLEMENTED: postAccountLogin. email ${email}`);
+    if (!req.body || !Account.validateFieldsLogin(req.body)) {
+        res.status(400).json({ reason: "Invalid login body" });
+        return;
+    }
+
+    const result = await Account.login(req.body);
+    if (result.err) {
+        res.status(500).send();
+        return;
+    }
+    if (!result.userId) {
+        res.status(401).send();
+        return;
+    }
+
+    const token = jwt.sign(
+        { userId: result.userId, email: req.body.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "2h" }
+    );
+    
+    res.status(200).json({ token: token });
 })
 
 // POST /account/change-password
 export const postAccountChangePassword = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: postAccountChangePassword");
+    if (!req.body || !Account.validateFieldsChangePassword(req.body)) {
+        res.status(400).json({ reason: "Invalid change password body" });
+        return;
+    }
+
+    // Extract and check JWT token from header
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+        res.status(400).json({ reason: "Missing token" });
+        return;
+    }
+    const token = authHeader.split(' ')[1];
+    var userId = undefined;
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
+        if (!err) {
+            userId = data.userId;
+        }
+    });
+
+    if (userId === undefined) {
+        res.status(401).send();
+        return;
+    }
+
+    // Try change password
+    const result = await Account.changePassword(userId, req.body);
+    if (result.err) {
+        res.status(500).send();
+        return;
+    }
+    if (!result.correctOld) {
+        res.status(401).send();
+        return;
+    }
+    if (!result.changed) {
+        res.status(400).json({ reason: "Invalid userId in token" });
+        return;
+    }
+    res.status(200).send();
 })
 
 // GET /account/{account_id}
