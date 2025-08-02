@@ -489,7 +489,7 @@ Upgrade an accounts role from customer to admin.
 * Expected JSON payload:
   ```json
   {
-      "account id": <promotee account id>
+      "account_id": <promotee account id>
   }
   ```
 * Possible responses:

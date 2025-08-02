@@ -70,6 +70,20 @@ export class Account {
     }
 
     /**
+     * Validates a qrequest body for use with Account.changeKind()
+     * 
+     * @param {Object} body 
+     * @returns {boolean} true if valid, false otherwise
+     */
+    static validateFieldsChangeKind(body) {
+        if (!verify(body.account_id, [Check.IS_ONLY_DIGITS])) {
+            console.log("account_id fail");
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Register user in database if the email address is not in use.
      * 
      * @param {Object} validatedBody See Account.validateFieldsRegister()
@@ -185,6 +199,103 @@ export class Account {
         } catch (err) {
             status.err = err;
         }
+        return status;
+    }
+
+    /**
+     * ADMIN
+     * 
+     * Set user kind to 'admin' or 'customer'.
+     * 
+     * @param {Object} validatedBody See Account.validateFieldsChangeKind()
+     * @param {string} kind 'admin' | 'customer'
+     */
+    static async changeKind(validatedBody, kind) {
+        const status = {
+            changed: false,
+            err: null
+        };
+
+        try {
+            const [result, _] = await dbConnPool.execute(
+                `UPDATE User
+                SET kind = ?
+                WHERE id = ?`,
+                [kind, validatedBody.account_id]
+            );
+            status.changed = result.affectedRows === 1;
+        } catch (err) {
+            status.err = err;
+        }
+
+        return status;
+    }
+
+    /**
+     * ADMIN
+     * 
+     * Find user information by partial name and/or email matches.
+     * 
+     * @param {string} name 
+     * @param {string} email 
+     * @returns Object { info: [], err }
+     */
+    static async findByPartialInfo(name, email) {
+        const status = {
+            info: null,
+            err: null
+        };
+
+        try {
+            const [rows, _] = await dbConnPool.execute(
+                // LIKE wildcards must be String interpolated into the query
+                `SELECT 
+                    id,
+                    given_name as 'given',
+                    last_name as 'last',
+                    email_addr as 'email'
+                FROM User
+                WHERE (given_name LIKE ? OR last_name LIKE ?)
+                AND email_addr LIKE ?`,
+                [`%${name}%`, `%${name}%`, `%${email}%`]
+            );
+
+            console.log(rows);
+            status.info = rows;
+        } catch (err) {
+            status.err = err;
+        }
+
+        return status;
+    }
+
+    static async findById(id) {
+        const status = {
+            info: null,
+            err: null
+        };
+
+        try {
+            const [row, _] = await dbConnPool.execute(
+                `SELECT 
+                    id,
+                    given_name as 'given',
+                    last_name as 'last',
+                    email_addr as 'email'
+                FROM User
+                WHERE id = ?
+                LIMIT 1`,
+                [id]
+            );
+            if (row.length === 0) {
+                status.err = "No result";
+            } else {
+                status.info = row[0];
+            }
+        } catch (err) {
+            status.err = err;
+        }
+
         return status;
     }
 }

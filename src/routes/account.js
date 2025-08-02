@@ -17,3 +17,4 @@ accountRouter.post("/change-password", controller.postAccountChangePassword);
 
 accountRouter.get("/:account_id", controller.adminGetAccountById);
 accountRouter.get("", controller.adminGetAccountQuery);
+accountRouter.post("/promote-to-admin", controller.adminPromoteToAdmin);
