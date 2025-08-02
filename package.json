@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "app": "node --env-file=.env src/app.js",
+    "watch": "node --watch --env-file=.env src/app.js",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
   },
   "author": "Louie-KC",
