@@ -32,6 +32,10 @@ export const isDate = (value) => Date.parse(`${value}T00:00:00Z`) !== NaN &&
 export const isTime = (value) => Date.parse(`1970-01-01T${value}Z`) !== NaN &&
     /^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/.test(value);
 
+export const isDateTime = (value) => value.split(' ').length === 2
+    && isDate(value.split(' ')[0])
+    && isTime(value.split(' ')[1]);
+
 const checkFns = [
     noSemiColon,
     isOnlyDigits,
@@ -43,7 +47,8 @@ const checkFns = [
     isEmail,
     isValidPassword,
     isDate,
-    isTime
+    isTime,
+    isDateTime
 ];
 
 export const Check = Object.freeze({
@@ -57,7 +62,8 @@ export const Check = Object.freeze({
     IS_EMAIL:               checkFns.indexOf(isEmail),
     IS_VALID_PASSWORD:      checkFns.indexOf(isValidPassword),
     IS_DATE:                checkFns.indexOf(isDate),
-    IS_TIME:                checkFns.indexOf(isTime)
+    IS_TIME:                checkFns.indexOf(isTime),
+    IS_DATETIME:            checkFns.indexOf(isDateTime)
 });
 
 export const verify = (value, checks) => {

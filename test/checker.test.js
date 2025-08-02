@@ -12,7 +12,8 @@ import {
     isEmail,
     isValidPassword,
     isDate,
-    isTime
+    isTime,
+    isDateTime
 } from '../src/utils/checker.js'
 
 test('Checker util is correctly configured', () => {
@@ -196,6 +197,15 @@ test('Ensure valid time and in format HH:MM:SS', () => {
     expect(isTime("23:60:00")).toBe(false);
     expect(isTime("25:11:11")).toBe(false);
 });
+
+test('Ensure valid datetime format YYYY-MM-DD HH:MM:SS', () => {
+    expect(isDateTime("")).toBe(false);
+    expect(isDateTime("00:00:00")).toBe(false);
+    expect(isDateTime("2025-08-02")).toBe(false);
+    expect(isDateTime("2025-08-02 00:00:00")).toBe(true);
+    expect(isDateTime("25-08-02 00:00:00")).toBe(false);
+    expect(isDateTime("2025-08-02 25:00:00")).toBe(false);
+})
 
 test('verify ensure not null or undefined', () => {
     expect(verify(null, [])).toBe(false);
