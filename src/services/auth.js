@@ -94,7 +94,7 @@ export const isAdmin = async (userId) => {
             LIMIT 1`,
             [userId]
         );
-        if (result.rowsAffected === 0) {
+        if (result.length === 0) {
             result.err = "No DB result";
         } else {
             status.isAdmin = result[0].admin === 1;
