@@ -69,13 +69,11 @@ CREATE TABLE Schedule (
     cinema_id           BIGINT NOT NULL,
     location_id         BIGINT NOT NULL,
     movie_id            BIGINT NOT NULL,
-    last_updated_by     BIGINT NOT NULL,
     start_time          DATETIME NOT NULL,
     available           BOOLEAN NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (cinema_id, location_id) REFERENCES Cinema (id, location_id),
-    FOREIGN KEY (movie_id) REFERENCES Movie (id),
-    FOREIGN KEY (last_updated_by) REFERENCES User (id)
+    FOREIGN KEY (movie_id) REFERENCES Movie (id)
 );
 
 CREATE TABLE Reservation (
@@ -170,21 +168,21 @@ INSERT INTO User (id, given_name, last_name, email_addr, password_hash, kind) VA
     (3, "Test customer 1", "customer1", "notreal1@fake.com", 0, "customer"),
     (4, "Test customer 2", "customer2", "notreal2@fake.com", 0, "customer");
 
-INSERT INTO Schedule (id, cinema_id, location_id, movie_id, last_updated_by, start_time, available) VALUES
-    ( 1, 1, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 10:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 2, 1, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 12:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 3, 1, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 14:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 4, 1, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 17:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 5, 2, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 11:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 6, 2, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 14:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 7, 2, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 10:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 8, 3, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 11:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    ( 9, 3, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 15:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+INSERT INTO Schedule (id, cinema_id, location_id, movie_id, start_time, available) VALUES
+    ( 1, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 10:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 2, 1, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 12:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 3, 1, 1, 2, STR_TO_DATE(CONCAT(CURDATE(), ' 14:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 4, 1, 1, 2, STR_TO_DATE(CONCAT(CURDATE(), ' 17:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 5, 2, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 11:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 6, 2, 1, 2, STR_TO_DATE(CONCAT(CURDATE(), ' 14:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 7, 2, 1, 2, STR_TO_DATE(CONCAT(CURDATE(), ' 10:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 8, 3, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 11:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    ( 9, 3, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 15:00:00'), "%Y-%m-%d %H:%i:%s"), true),
 
-    (10, 1, 2, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 10:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    (11, 1, 2, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 13:00:00'), "%Y-%m-%d %H:%i:%s"), true),
-    (12, 1, 2, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 15:30:00'), "%Y-%m-%d %H:%i:%s"), true),
-    (13, 1, 2, 1, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 18:30:00'), "%Y-%m-%d %H:%i:%s"), true);
+    (10, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 10:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    (11, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 13:00:00'), "%Y-%m-%d %H:%i:%s"), true),
+    (12, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 15:30:00'), "%Y-%m-%d %H:%i:%s"), true),
+    (13, 1, 2, 1, STR_TO_DATE(CONCAT(CURDATE(), ' 18:30:00'), "%Y-%m-%d %H:%i:%s"), true);
 
 INSERT INTO Reservation (id, user_id, schedule_id, kind, last_updated) VALUES
     (1, 3,  1, "confirmed", NOW()),

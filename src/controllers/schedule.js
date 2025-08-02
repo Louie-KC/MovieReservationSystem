@@ -109,7 +109,36 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
 
 // PUT /schedule
 export const adminPutNewSchedule = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: adminPutNewSchedule");
+    if (!req.body || !Schedule.validateFields(req.body)) {
+        res.status(400).json({ reason: "Invalid body" });
+        return;
+    }
+
+    // Authorisation
+    const adminCheck = await Auth.tokenAdminCheck(req);
+    if (adminCheck !== null) {
+        res.status(adminCheck).send();
+        return;
+    }
+
+    const schedule = new Schedule(req.body);
+    const proposedTime = Date.parse(schedule.time);
+    if (proposedTime < Date.now()) {
+        res.status(400).json({ reason: "Time value is in the past" });
+        return;
+    }
+
+    const status = await schedule.saveNewInDb();
+    if (status.err) {
+        console.log(status.err);
+        res.status(500).send();
+        return;
+    }
+    if (!status.success) {
+        res.status(400).send();
+        return;
+    }
+    res.status(201).send();
 });
 
 // POST /schedule/{schedule_id}

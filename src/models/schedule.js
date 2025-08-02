@@ -31,11 +31,43 @@ export class Schedule {
             console.log("cinema failed");
             return false;
         }
-        if (!verify(data.time, [Check.IS_DATE])) {
+        if (!verify(data.time, [Check.IS_DATETIME])) {
             console.log("time failed");
             return false;
         }
         return true;
+    }
+
+    /**
+     * ADMIN
+     * 
+     * Save the calling Schedule object into the database as a new schedule.
+     * 
+     * @returns Object { success, null }
+     */
+    async saveNewInDb() {
+        const status = {
+            success: false,
+            err: null
+        };
+
+        try {
+            const [result, _] = await dbConnPool.execute(
+                `INSERT INTO Schedule
+                    (cinema_id, location_id, movie_id, start_time, available)
+                VALUES (?, ?, ?, ?, ?)`,
+                [this.cinema, this.location, this.movie, this.time, true]
+            );
+
+            if (result.affectedRows === 0) {
+                status.err = "DB operation failed"
+            }
+            status.success = result.affectedRows === 1;
+        } catch (err) {
+            status.err = err;
+        }
+
+        return status;
     }
 
     // Read operations
