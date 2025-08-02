@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 
 import { Check, verify } from '../utils/checker.js';
+import * as Auth  from '../services/auth.js';
 import { Movie } from '../models/movie.js';
 
 // GET /movie?genre={genre}
@@ -62,20 +63,23 @@ export const getMovieById = asyncHandler(async (req, res, next) => {
 
 // PUT /movie
 export const adminPutNewMovie = asyncHandler(async (req, res, next) => {
-    // TODO: Identify user by token. Verify user is admin.
-    
     if (!req.body || !Movie.validateFields(req.body)) {
         res.status(400).json({ reason: "Invalid body" });
         next();
         return;
     }
-    
+
+    const adminCheckRes = await Auth.tokenAdminCheck(req);
+    if (adminCheckRes !== null) {
+        res.status(adminCheckRes).send();
+        return;
+    }
+
     const movie = new Movie(req.body);
     const result = await movie.saveNewInDb();
 
     if (!result.movie_succeeded) {
-        res.status(500);
-        next();
+        res.status(500).send();
         return;
     }
 

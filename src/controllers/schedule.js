@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { Check, verify } from '../utils/checker.js';
+import * as Auth  from '../services/auth.js';
 import { Schedule } from '../models/schedule.js';
 
 // GET /schedule?location={location id}&date={YYYY-MM-DD}
@@ -73,7 +74,11 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
     const { location_id, cinema_id } = req.params;
     const date = req.query.date;
 
-    // TODO: Verify requester is admin once accounts implemented.
+    const adminCheck = await Auth.tokenAdminCheck(req);
+    if (adminCheck !== null) {
+        res.status(adminCheck).send();
+        return;
+    }
 
     if (!verify(location_id, [Check.IS_ONLY_DIGITS])) {
         res.status(400).json({ reason: `location_id (${locationId}) is non-numeric` });

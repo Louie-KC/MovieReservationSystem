@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
-import jwt from "jsonwebtoken";
 import { Account } from '../models/account.js';
+import * as Auth from '../services/auth.js';
 
 // POST /account/register
 export const postAccountRegister = asyncHandler(async (req, res, next) => {
@@ -39,12 +39,8 @@ export const postAccountLogin = asyncHandler(async (req, res, next) => {
         return;
     }
 
-    const token = jwt.sign(
-        { userId: result.userId, email: req.body.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "2h" }
-    );
-    
+    const token = Auth.createJWT(result.userId, req.body.email);
+
     res.status(200).json({ token: token });
 })
 
@@ -62,21 +58,14 @@ export const postAccountChangePassword = asyncHandler(async (req, res, next) => 
         return;
     }
     const token = authHeader.split(' ')[1];
-    var userId = undefined;
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
-        if (!err) {
-            userId = data.userId;
-        }
-    });
-
-    if (userId === undefined) {
+    const tokenData = Auth.verifyExtractJWT(token);
+    if (!tokenData.valid) {
         res.status(401).send();
         return;
     }
 
     // Try change password
-    const result = await Account.changePassword(userId, req.body);
+    const result = await Account.changePassword(tokenData.userId, req.body);
     if (result.err) {
         res.status(500).send();
         return;
