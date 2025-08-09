@@ -6,18 +6,15 @@ import * as Auth from '../services/auth.js';
 // POST /account/register
 export const postAccountRegister = asyncHandler(async (req, res, next) => {
     if (!req.body || !Account.validateFieldsRegister(req.body)) {
-        res.status(400).json({ reason: "Invalid registration body" })
-        return;
+        return res.status(400).json({ reason: "Invalid registration body" });
     }
     
     const result = await Account.registerInDb(req.body);
     if (result.err) {
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
     if (result.emailAlreadyTaken) {
-        res.status(400).json({ reason: "Email address already in use" });
-        return;
+        return res.status(400).json({ reason: "Email address already in use" });
     }
     
     res.status(200).send();
@@ -26,18 +23,15 @@ export const postAccountRegister = asyncHandler(async (req, res, next) => {
 // POST /account/login
 export const postAccountLogin = asyncHandler(async (req, res, next) => {
     if (!req.body || !Account.validateFieldsLogin(req.body)) {
-        res.status(400).json({ reason: "Invalid login body" });
-        return;
+        return res.status(400).json({ reason: "Invalid login body" });
     }
 
     const result = await Account.login(req.body);
     if (result.err) {
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
     if (!result.userId) {
-        res.status(401).send();
-        return;
+        return res.status(401).send();
     }
 
     const token = Auth.createJWT(result.userId, req.body.email);
@@ -48,36 +42,30 @@ export const postAccountLogin = asyncHandler(async (req, res, next) => {
 // POST /account/change-password
 export const postAccountChangePassword = asyncHandler(async (req, res, next) => {
     if (!req.body || !Account.validateFieldsChangePassword(req.body)) {
-        res.status(400).json({ reason: "Invalid change password body" });
-        return;
+        return res.status(400).json({ reason: "Invalid change password body" });
     }
 
     // Extract and check JWT token from header
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
-        res.status(400).json({ reason: "Missing token" });
-        return;
+        return res.status(400).json({ reason: "Missing token" });
     }
     const token = authHeader.split(' ')[1];
     const tokenData = Auth.verifyExtractJWT(token);
     if (!tokenData.valid) {
-        res.status(401).send();
-        return;
+        return res.status(401).send();
     }
 
     // Try change password
     const result = await Account.changePassword(tokenData.userId, req.body);
     if (result.err) {
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
     if (!result.correctOld) {
-        res.status(401).send();
-        return;
+        return res.status(401).send();
     }
     if (!result.changed) {
-        res.status(400).json({ reason: "Invalid userId in token" });
-        return;
+        return res.status(400).json({ reason: "Invalid userId in token" });
     }
     res.status(200).send();
 })
@@ -86,14 +74,12 @@ export const postAccountChangePassword = asyncHandler(async (req, res, next) => 
 export const adminGetAccountById = asyncHandler(async (req, res, next) => {
     const queryAccountId = req.params.account_id;
     if (!verify(queryAccountId, [Check.IS_ONLY_DIGITS])) {
-        res.status(400).json({ reason: "account_id is not an integer" });
-        return;
+        return res.status(400).json({ reason: "account_id is not an integer" });
     }
 
     const adminCheck = await Auth.tokenAdminCheck(req);
     if (adminCheck !== null) {
-        res.status(adminCheck).send();
-        return;
+        return res.status(adminCheck).send();
     }
     
     const result = await Account.findById(queryAccountId);
@@ -101,11 +87,10 @@ export const adminGetAccountById = asyncHandler(async (req, res, next) => {
     if (result.err) {
         console.log(result.err);
         if (result.err === "No result") {
-            res.status(400).json({ reason: "No account with account_id" });
+            return res.status(400).json({ reason: "No account with account_id" });
         } else {
-            res.status(500).send();
+            return res.status(500).send();
         }
-        return;
     }
     res.status(200).json(result.info);
 });
@@ -117,31 +102,26 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
 
     // Input validation
     if (queryName.length === 0 && queryEmail.length === 0) {
-        res.status(400).json({ reason: "No valid query parameters specified" });
-        return;
+        return res.status(400).json({ reason: "No valid query parameters specified" });
     }
 
     const nameValidLen  = (queryName.length  === 0 || queryName.length  >= 3);
     const emailValidLen = (queryEmail.length === 0 || queryEmail.length >= 3);
 
     if (!nameValidLen || !emailValidLen) {
-        res.status(400).json({ reason: "One or both query parameters are too short" });
-        return;
+        return res.status(400).json({ reason: "One or both query parameters are too short" });
     }
     if (queryEmail.length !== 0 && !verify(queryEmail, [Check.IS_EMAIL, Check.NO_SEMICOLON])) {
-        res.status(400).json({ reason: "Bad email query parameter" });
-        return;
+        return res.status(400).json({ reason: "Bad email query parameter" });
     }
     if (!verify(queryName, [Check.IS_ALPHABETICAL, Check.NO_SEMICOLON])) {
-        res.status(400).json({ reason: "Bad name query parameter" });
-        return;
+        return res.status(400).json({ reason: "Bad name query parameter" });
     }
 
     // Auth
     const adminCheck = await Auth.tokenAdminCheck(req);
     if (adminCheck !== null) {
-        res.status(adminCheck).send();
-        return;
+        return res.status(adminCheck).send();
     }
 
     // DB query
@@ -149,8 +129,7 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
     console.log(result);
     if (result.err) {
         console.log(result.err);
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
 
     res.status(200).json(result.info);
@@ -159,22 +138,19 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
 // POST /admin/account/promote-to-admin
 export const adminPromoteToAdmin = asyncHandler(async (req, res, next) => {
     if (!req.body || !Account.validateFieldsChangeKind(req.body)) {
-        res.status(400).json({ reason: "Invalid body" });
-        return;
+        return res.status(400).json({ reason: "Invalid body" });
     }
 
     // Authorisation
     const adminCheck = await Auth.tokenAdminCheck(req);
     if (adminCheck !== null) {
-        res.status(adminCheck).send();
-        return;
+        return res.status(adminCheck).send();
     }
 
     const status = await Account.changeKind(req.body, 'admin');
     if (status.err) {
         console.log(status.err);
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
     if (status.changed) {
         res.status(200).send();

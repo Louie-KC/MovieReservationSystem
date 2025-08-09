@@ -9,28 +9,19 @@ export const getMovieQuery = asyncHandler(async (req, res, next) => {
     const { genre } = req.query;
 
     if (genre && !verify(genre, [Check.IS_ALPHABETICAL, Check.NO_SEMICOLON])) {
-        res.status(400).json({reason: "Invalid genre value"});
-        next();
-        return;
+        return res.status(400).json({reason: "Invalid genre value"});
     }
     
-    try {
-        const movies = genre
-            ? await Movie.findByGenre(genre)
-            : await Movie.findAll();
+    const movies = genre
+        ? await Movie.findByGenre(genre)
+        : await Movie.findAll();
 
-        if (!movies) {
-            console.log("getMovieQuery: Query error. genre", genre);
-            res.status(500);
-            next();
-            return;
-        }
-
-        res.status(200).json(movies);
-    } catch (err) {
-        console.log(err);
-        next(err);
+    if (!movies) {
+        console.log(`getMovieQuery: Query error. genre: ${genre}`);
+        return res.status(500).send();
     }
+
+    res.status(200).json(movies);
 })
 
 // GET /movie/{movie_id}
@@ -38,49 +29,36 @@ export const getMovieById = asyncHandler(async (req, res, next) => {
     const movieId = req.params.movie_id;
 
     if (!verify(movieId, [Check.IS_ONLY_DIGITS])) {
-        res.status(400).json({reason: "Invalid movie id"});
-        next();
-        return;
+        return res.status(400).json({reason: "Invalid movie id"});
     }
 
     const movieIdNumber = +movieId;
     
-    try {
-        const movie = await Movie.findByID(movieIdNumber);
-        if (!movie) {
-            res.status(404);
-            next();
-            return;
-        }
-
-        delete movie.id;  // id known in request
-        res.status(200).json(movie);
-    } catch (err) {
-        console.log(err);
-        next(err);
+    const movie = await Movie.findByID(movieIdNumber);
+    if (!movie) {
+        return res.status(404).send();
     }
+
+    delete movie.id;  // id known in request
+    res.status(200).json(movie);
 });
 
 // PUT /movie
 export const adminPutNewMovie = asyncHandler(async (req, res, next) => {
     if (!req.body || !Movie.validateFields(req.body)) {
-        res.status(400).json({ reason: "Invalid body" });
-        next();
-        return;
+        return res.status(400).json({ reason: "Invalid body" });
     }
 
     const adminCheckRes = await Auth.tokenAdminCheck(req);
     if (adminCheckRes !== null) {
-        res.status(adminCheckRes).send();
-        return;
+        return res.status(adminCheckRes).send();
     }
 
     const movie = new Movie(req.body);
     const result = await movie.saveNewInDb();
 
     if (!result.movie_succeeded) {
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
 
     if (result.fail.length > 0) {

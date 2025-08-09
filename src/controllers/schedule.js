@@ -13,60 +13,42 @@ export const getScheduleQuery = asyncHandler(async (req, res, next) => {
 export const getScheduleById = asyncHandler(async (req, res, next) => {
     const scheduleId = req.params.schedule_id;
     if (!verify(scheduleId, [Check.IS_ONLY_DIGITS])) {
-        res.status(400).json({ reason: "Invalid schedule id value" });
-        next();
-        return;
+        return res.status(400).json({ reason: "Invalid schedule id value" });
     }
 
     const scheduleIdNumber = +scheduleId;
 
-    try {
-        const schedule = await Schedule.findById(scheduleIdNumber);
-        if (!schedule) {
-            res.status(500).send();
-            return;
-        }
-        if (schedule === "No result") {
-            res.status(404).send();
-            return;
-        }
-
-        delete schedule.id;  // id known by client in request
-        res.status(200).json(schedule);
-
-    } catch (err) {
-        console.log(err);
-        next(err);
+    const schedule = await Schedule.findById(scheduleIdNumber);
+    if (!schedule) {
+        return res.status(500).send();
     }
+    if (schedule === "No result") {
+        return res.status(404).send();
+    }
+
+    delete schedule.id;  // id known by client in request
+    res.status(200).json(schedule);
 });
 
 // GET /schedule/{schedule_id}/seats
 export const getScheduleSeatsById = asyncHandler(async (req, res, next) => {
     const scheduleId = req.params.schedule_id;
     if (!verify(scheduleId, [Check.IS_ONLY_DIGITS])) {
-        res.status(400).json({ reason: "Invalid schedule id value" }).send();
-        return;
+        return res.status(400).json({ reason: "Invalid schedule id value" });
     }
 
     const scheduleIdNumber = +scheduleId;
 
-    try {
-        const seatingInfo = await Schedule.findSeatingAvailabilityById(scheduleIdNumber);
-        if (!seatingInfo) {
-            res.status(500).send();
-            return;
-        }
-
-        if (seatingInfo.length === 0) {
-            res.status(404).send();
-            return;
-        }
-
-        res.status(200).json(seatingInfo);
-    } catch (err) {
-        console.log(err);
-        next(err);
+    const seatingInfo = await Schedule.findSeatingAvailabilityById(scheduleIdNumber);
+    if (!seatingInfo) {
+        return res.status(500).send();
     }
+
+    if (seatingInfo.length === 0) {
+        return res.status(404).send();
+    }
+
+    res.status(200).json(seatingInfo);
 });
 
 // GET /schedule/{location_id}/{cinema_id}?date={YYYY-MM-DD}
@@ -76,23 +58,19 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
 
     const adminCheck = await Auth.tokenAdminCheck(req);
     if (adminCheck !== null) {
-        res.status(adminCheck).send();
-        return;
+        return res.status(adminCheck).send();
     }
 
     if (!verify(location_id, [Check.IS_ONLY_DIGITS])) {
-        res.status(400).json({ reason: `location_id (${locationId}) is non-numeric` });
-        return;
+        return res.status(400).json({ reason: `location_id (${locationId}) is non-numeric` });
     }
 
     if (!verify(cinema_id, [Check.IS_ONLY_DIGITS])) {
-        res.status(400).json({ reason: `cinema_id (${cinemaId}) is non-numeric` });
-        return;
+        return res.status(400).json({ reason: `cinema_id (${cinemaId}) is non-numeric` });
     }
 
     if (!verify(date, [Check.IS_DATE])) {
-        res.status(400).json({ reason: "Invalid or missing date query parameter" });
-        return;
+        return res.status(400).json({ reason: "Invalid or missing date query parameter" });
     }
 
     const locationIdNumber = +location_id;
@@ -100,8 +78,7 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
 
     const cinemaSchedule = await Schedule.findCinemaSchedule(locationIdNumber, cinemaIdNumber, date);
     if (!cinemaSchedule) {
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
 
     res.status(200).json(cinemaSchedule);
@@ -110,33 +87,28 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
 // PUT /schedule
 export const adminPutNewSchedule = asyncHandler(async (req, res, next) => {
     if (!req.body || !Schedule.validateFields(req.body)) {
-        res.status(400).json({ reason: "Invalid body" });
-        return;
+        return res.status(400).json({ reason: "Invalid body" });
     }
 
     // Authorisation
     const adminCheck = await Auth.tokenAdminCheck(req);
     if (adminCheck !== null) {
-        res.status(adminCheck).send();
-        return;
+        return res.status(adminCheck).send();
     }
 
     const schedule = new Schedule(req.body);
     const proposedTime = Date.parse(schedule.time);
     if (proposedTime < Date.now()) {
-        res.status(400).json({ reason: "Time value is in the past" });
-        return;
+        return res.status(400).json({ reason: "Time value is in the past" });
     }
 
     const status = await schedule.saveNewInDb();
     if (status.err) {
         console.log(status.err);
-        res.status(500).send();
-        return;
+        return res.status(500).send();
     }
     if (!status.success) {
-        res.status(400).send();
-        return;
+        return res.status(400).send();
     }
     res.status(201).send();
 });
