@@ -14,7 +14,7 @@ import {
     isDate,
     isTime,
     isDateTime
-} from '../src/utils/checker.js'
+} from '../../src/utils/checker.js'
 
 test('Checker util is correctly configured', () => {
     expect(checkerInitValid()).toBe(true);

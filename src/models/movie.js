@@ -34,11 +34,11 @@ export class Movie {
             console.log("id failed");
             return false;
         }
-        if (!verify(data.title, [Check.IS_ALPHANUMERICAL]) && data.title.length > 4) {
+        if (!verify(data.title, [Check.IS_ALPHANUMERICAL]) || data.title.length < 4) {
             console.log("title failed", data.title);
             return false;
         }
-        if (!verify(data.description, [Check.IS_ALPHANUMERICAL]) && data.description.length > 4) {
+        if (!verify(data.description, [Check.IS_ALPHANUMERICAL]) || data.description.length < 4) {
             console.log("description failed");
             return false;
         }
