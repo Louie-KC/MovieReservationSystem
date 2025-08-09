@@ -14,6 +14,26 @@ describe("Account - register verification", () => {
         expect(Account.validateFieldsRegister(valid)).toBe(true);
     });
 
+    it('should be invalid: missing field(s)', () => {
+        expect(Account.validateFieldsRegister({})).toBe(false);
+
+        const missingGiven = JSON.parse(JSON.stringify(valid));
+        delete missingGiven.given_name;
+        expect(Account.validateFieldsRegister(missingGiven)).toBe(false);
+
+        const missingLast = JSON.parse(JSON.stringify(valid));
+        delete missingLast.last_name;
+        expect(Account.validateFieldsRegister(missingLast)).toBe(false);
+
+        const missingEmail = JSON.parse(JSON.stringify(valid));
+        delete missingEmail.email;
+        expect(Account.validateFieldsRegister(missingEmail)).toBe(false);
+
+        const missingPassword = JSON.parse(JSON.stringify(valid));
+        delete missingPassword.password;
+        expect(Account.validateFieldsRegister(missingPassword)).toBe(false);
+    });
+
     it('should be invalid: bad names', () => {
         const givenWithNumber = JSON.parse(JSON.stringify(valid));
         givenWithNumber.given_name = "abcd1";
@@ -54,6 +74,12 @@ describe("Account - login verification", () => {
         expect(Account.validateFieldsLogin(valid)).toBe(true);
     });
 
+    it('should be invalid: Missing field', () => {
+        const incomplete = JSON.parse(JSON.stringify(valid));
+        incomplete.email = "abcd@email";
+        expect(Account.validateFieldsLogin(incomplete)).toBe(false);
+    });
+
     it('should be invalid: bad email address', () => {
         const incomplete = JSON.parse(JSON.stringify(valid));
         incomplete.email = "abcd@email";
@@ -83,6 +109,19 @@ describe("Account - change password verification", () => {
     it('should be valid', () => {
         expect(Account.validateFieldsChangePassword(valid)).toBe(true);
     });
+
+    it('should be invalid: Missing field(s)', () => {
+        expect(Account.validateFieldsChangePassword({})).toBe(false);
+
+        const missingOld = JSON.parse(JSON.stringify(valid));
+        delete missingOld.old;
+        expect(Account.validateFieldsChangePassword(missingOld)).toBe(false);
+        
+        const missingNew = JSON.parse(JSON.stringify(valid));
+        delete missingNew.new;
+        expect(Account.validateFieldsChangePassword(missingNew)).toBe(false);
+    });
+    
     
     it('should be invalid: Bad old password', () => {
         const noDigits = JSON.parse(JSON.stringify(valid));
@@ -138,6 +177,26 @@ describe("Movie - field validation", () => {
         expect(Movie.validateFields(withoutId)).toBe(true);
     });
 
+    it('should be invalid: Missing field(s)', () => {
+        expect(Movie.validateFields({})).toBe(false);
+
+        const missingTitle = JSON.parse(JSON.stringify(valid));
+        delete missingTitle.title;
+        expect(Movie.validateFields(missingTitle)).toBe(false);
+
+        const missingDescription = JSON.parse(JSON.stringify(valid));
+        delete missingDescription.description;
+        expect(Movie.validateFields(missingDescription)).toBe(false);
+
+        const missingDuration = JSON.parse(JSON.stringify(valid));
+        delete missingDuration.duration;
+        expect(Movie.validateFields(missingDuration)).toBe(false);
+
+        const missingGenres = JSON.parse(JSON.stringify(valid));
+        delete missingGenres.genres;
+        expect(Movie.validateFields(missingGenres)).toBe(false);
+    });
+
     it('should be invalid: bad title', () => {
         const tooShort = JSON.parse(JSON.stringify(valid));
         tooShort.title = "abc";
@@ -189,6 +248,26 @@ describe("Schedule - field validation", () => {
 
     it('should be valid', () => {
         expect(Schedule.validateFields(valid)).toBe(true);
+    });
+
+    it('should be invalid: Missing fields', () => {
+        expect(Schedule.validateFields({})).toBe(false);
+
+        const missingMovieId = JSON.parse(JSON.stringify(valid));
+        delete missingMovieId.movie;
+        expect(Schedule.validateFields(missingMovieId)).toBe(false);
+
+        const missingLocationId = JSON.parse(JSON.stringify(valid));
+        delete missingLocationId.location;
+        expect(Schedule.validateFields(missingLocationId)).toBe(false);
+
+        const missingCinemaId = JSON.parse(JSON.stringify(valid));
+        delete missingCinemaId.cinema;
+        expect(Schedule.validateFields(missingCinemaId)).toBe(false);
+
+        const missingTime = JSON.parse(JSON.stringify(valid));
+        delete missingTime.time;
+        expect(Schedule.validateFields(missingTime)).toBe(false);
     });
 
     it('should be invalid: bad movie id', () => {
