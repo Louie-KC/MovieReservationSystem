@@ -9,7 +9,7 @@ import { checkerInitValid } from './utils/checker.js';
 
 const PORT = 8080
 
-const app = express();
+export const app = express();
 app.use(express.json());
 
 app.get("/health", (_, res) => {
@@ -28,6 +28,6 @@ if (!checkerInitValid()) {
 
 await dbInit();
 
-app.listen(PORT, () => {
+export const server = app.listen(PORT, () => {
     console.log(`Movie Reservation Service listening to port ${PORT}`)    
 })
