@@ -80,6 +80,9 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
     if (!cinemaSchedule) {
         return res.status(500).send();
     }
+    if (cinemaSchedule.length === 0) {
+        return res.status(404).send();
+    }
 
     res.status(200).json(cinemaSchedule);
 });

@@ -66,6 +66,10 @@ export class Account {
             console.log("new fail");
             return false;
         }
+        if (body.new === body.old) {
+            console.log("new === old");
+            return false;
+        }
         return true;
     }
 

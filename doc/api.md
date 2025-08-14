@@ -11,10 +11,10 @@ Locations, cinemas, movies and schedules
 
 * [GET /location](#get-location)
 * [GET /movie?genre={genre}](#get-moviegenregenre)
-* [GET /movie/{movie id}](#get-moviemovie-id)
-* [GET /schedule?location={location id}?&date={YYYY-MM-DD}](#get-schedulelocationlocation-iddateyyyy-mm-dd)
-* [GET /schedule/{schedule id}](#get-scheduleschedule-id)
-* [GET /schedule/{schedule id}/seats](#get-scheduleschedule-idseats)
+* [GET /movie/{movie_id}](#get-moviemovie_id)
+* [GET /schedule?location={location_id}?&date={YYYY-MM-DD}](#get-schedulelocation_idcinema_iddateyyyy-mm-dd)
+* [GET /schedule/{schedule_id}](#get-scheduleschedule_id)
+* [GET /schedule/{schedule_id}/seats](#get-scheduleschedule_idseats)
 
 Orders (`/order`)
 
@@ -25,22 +25,22 @@ Orders (`/order`)
 
 Admin: Accounts
 
-* [GET /accounts/{account id}](#get-accountsaccount-id)
+* [GET /accounts/{account_id}](#get-accountsaccount_id)
 * [GET /accounts?name={name part}&email={email part}](#get-accountsnamename-partemailemail-part)
 
 Admin: Movies
 
 * [PUT    /movie](#put-movie)
-* [POST   /movie/{movie id}](#post-moviemovie-id)
-* [PATCH  /movie/{movie id}](#patch-moviemovie-id)
-* [DELETE /movie/{movie id}](#delete-moviemovie-id)
+* [POST   /movie/{movie_id}](#post-moviemovie_id)
+* [PATCH  /movie/{movie_id}](#patch-moviemovie_id)
+* [DELETE /movie/{movie_id}](#delete-moviemovie_id)
 
 Admin: Schedule
 
-* [GET    /schedule/{location id}/{cinema id}?date={YYYY-MM-DD}](#get-schedulelocation-idcinema-iddateyyyy-mm-dd)
+* [GET    /schedule/{location_id}/{cinema_id}?date={YYYY-MM-DD}](#get-schedulelocation_idcinema_iddateyyyy-mm-dd)
 * [PUT    /schedule](#put-schedule)
-* [POST   /schedule/{schedule id}](#post-scheduleschedule-id)
-* [DELETE /schedule/{schedule id}](#delete-scheduleschedule-id)
+* [POST   /schedule/{schedule_id}](#post-scheduleschedule_id)
+* [DELETE /schedule/{schedule_id}](#delete-scheduleschedule_id)
 
 Admin: Aux
 
@@ -53,6 +53,8 @@ Register a new user account.
 * Expected JSON payload:
   ```json
   {
+      "given_name": <given name(s)>,
+      "last_name": <last name>,
       "email": <email address>,
       "password": <password>
   }
@@ -60,7 +62,9 @@ Register a new user account.
 * Possible responses
     * HTTP 200 OK: Success
     * HTTP 400 Bad Request: (see reason)
+        * Digits and/or symbols in name fields
         * Invalid email address format
+        * email address is already in use
         * Password length not in range 4..128
 
 ### POST /account/login
@@ -80,8 +84,10 @@ Authenticate a user and receive an authentication token.
         "token": <auth token>
       }
       ```
-    * HTTP 400 Bad Request: (see reason)
+    * HTTP 400 Bad Request:
         * Invalid email address format
+        * Invalid password format
+    * HTTP 401 Unauthorised:
         * Incorrect email & password pair
 
 ### POST /account/change-password
@@ -97,10 +103,12 @@ Change the password of the logged in user (token).
   ```
 * Possible responses
     * HTTP 200 OK: Success
-    * HTTP 400 Bad Request: (see reason)
-        * The provided old password is incorrect
+    * HTTP 400 Bad Request:
         * The old & new password are the same
         * The new password length not in range 4..128
+    * HTTP 401 Unauthorized:
+        * Missing or invalid JWT
+        * Incorrect old password
 
 ### GET /location
 Retrieve a list of all locations.
@@ -118,7 +126,7 @@ Retrieve a list of all locations.
       ]
       ```
 
-### GET /movie#genre={genre}
+### GET /movie?genre={genre}
 Retrieve a list of all movies matching the provided `genre` (if specified)
 
 * Authentication: None
@@ -137,7 +145,7 @@ Retrieve a list of all movies matching the provided `genre` (if specified)
       ]
       ```
 
-### GET /movie/{movie id}
+### GET /movie/{movie_id}
 Retrieve information about a movie.
 
 * Authentication: None
@@ -156,9 +164,13 @@ Retrieve information about a movie.
           ]
       }
       ```
+    * HTTP 400 Bad Request:
+        * Invalid movie_id format. Digits only.
+    * HTTP 404 Not Found:
+        * Invalid movie_id.
 
-### GET /schedule?location={location id}?&date={YYYY-MM-DD}
-Retrieve the schedules for movies at a location.
+### GET /schedule/{location_id}/{cinema_id}?&date={YYYY-MM-DD}
+Retrieve the schedules for specific location cinema.
 
 The `location` parameter must be specified to get a result.
 If the `date` parameter is not specified, the current date is assumed.
@@ -186,8 +198,15 @@ If the `date` parameter is not specified, the current date is assumed.
           ...
       ]
       ```
+    * HTTP 400 Bad Request:
+        * Invalid location_id format
+        * Invalid cinema_id format
+        * Invalid date format
+    * HTTP 401 Unauthorized:
+        * Invalid or missing JWT
+        * No permission
 
-### GET /schedule/{schedule id}
+### GET /schedule/{schedule_id}
 Retrieve information about a schedule.
 
 * Authentication: None
@@ -203,8 +222,12 @@ Retrieve information about a schedule.
           "seats": <number of available seats>
       }
       ```
+    * HTTP 400 Bad Request:
+        * Invalid schedule_id format
+    * HTTP 404 Not Found:
+        * Invalid schedule_id
 
-### GET /schedule/{schedule id}/seats
+### GET /schedule/{schedule_id}/seats
 Retrieve the seating and availability information for a scheduled movie.
 
 * Authentication: None
@@ -219,6 +242,10 @@ Retrieve the seating and availability information for a scheduled movie.
           ...
       ]
       ```
+    * HTTP 400 Bad Request:
+        * Invalid schedule_id format
+    * HTTP 404 Not Found:
+        * Invalid schedule_id
 
 ### GET /order/history
 Retrieve a list of bookings for a logged in user (token).
@@ -310,7 +337,9 @@ Cancel an order for a movie ticket. Cancellations are only possible if the start
     * HTTP 401 Unauthorised: Invalid token.
 
 
-### GET /accounts/{account id}
+### GET /accounts/{account_id}
+ADMIN
+
 Retrieve information about a specific account.
 
 * Authentication: Bearer
@@ -324,8 +353,12 @@ Retrieve information about a specific account.
           "email": <email address>
       },
       ```
-    * HTTP 401 Unauthorised: No permission.
-
+    * HTTP 400 Bad Request:
+        * Invalid account_id format
+        * account_id is not mapped to an account/user.
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission
 
 ### GET /accounts?name={name part}&email={email part}
 Retrieve account IDs that partially match the `name` and/or `email` parts. At least one of the parameters must be set with a minimum length of 3 characters.
@@ -344,7 +377,13 @@ Retrieve account IDs that partially match the `name` and/or `email` parts. At le
           ...
       ]
       ```
-    * HTTP 401 Unauthorised: No permission.
+    * HTTP 400 Bad Request:
+        * One or both query parameters are too short. min 3 chars
+        * Invalid format for email query parameter
+        * Invalid format for name query parameter
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission
 
 ### PUT /movie
 Add a new movie.
@@ -356,11 +395,20 @@ Add a new movie.
       "title": <movie title>,
       "description": <movie description>,
       "duration": <movie duration in minutes>,
-      "poster": <TODO: Movie poster>
+      "poster": <TODO: Movie poster>,
+      "genres": [ <Genre 1>, <Genre 2>, ... ]
   }
   ```
+* Possible responses:
+    * HTTP 201 Created
+    * HTTP 400 Bad Request:
+        * Invalid body format
+        * Invalid genre value(s)
+    * HTTP 401 Unauthorized:
+        * Missing or invalid JWT
+        * No permission
 
-### POST /movie/{movie id}
+### POST /movie/{movie_id}
 Update movie detail(s).
 
 Note: The JSON payload should only state keys and values for the fields being updated. Non-updated fields should be excluded.
@@ -377,7 +425,7 @@ Note: The JSON payload should only state keys and values for the fields being up
     * HTTP 400 Bad Request: One or more field names are invalid. No changes made.
     * HTTP 401 Unauthorised: No permission.
 
-### PATCH /movie/{movie id}
+### PATCH /movie/{movie_id}
 Toggle between making a movie available and unavailable.
 
 Side effect: Marks all future schedules with no confirmed orders/tickets for the movie as (un)available. All schedules with confirmed orders/tickets will remain, and have their IDs returned.
@@ -396,7 +444,7 @@ Side effect: When marking as unavailable making all tentative/reservation orders
     * HTTP 400 Bad Request: Invalid movie ID.
     * HTTP 401 Unauthorised: No permission.
 
-### DELETE /movie/{movie id}
+### DELETE /movie/{movie_id}
 Delete a movie.
 
 * Authentication: Bearer
@@ -411,7 +459,7 @@ Delete a movie.
     * HTTP 400 Bad Request: Invalid movie ID.
     * HTTP 401 Unauthorised: No permission.
 
-### GET /schedule/{location id}/{cinema id}?date={YYYY-MM-DD}
+### GET /schedule/{location_id}/{cinema_id}?date={YYYY-MM-DD}
 Retrieve the movie schedule for a specific cinema on a date. The `date` parameter must be specified.
 
 * Authorisation: Bearer
@@ -428,6 +476,16 @@ Retrieve the movie schedule for a specific cinema on a date. The `date` paramete
           ...
       ]
       ```
+    * HTTP 400 Bad Request:
+        * Invalid location_id format
+        * Invalid cinema_id format
+        * Missing date parameter
+    * HTTP 401 Unauthorized:
+        * Missing or invalid JWT
+        * No permission
+    * HTTP 404 Not Found:
+        * Invalid location_id and cinema_id combination
+        * No schedules
 
 ### PUT /schedule
 Add a new scheduled showing for a movie.
@@ -443,7 +501,7 @@ Add a new scheduled showing for a movie.
   }
   ```
 * Possible responses:
-    * HTTP 200 OK: Success
+    * HTTP 201 OK: Success
     * HTTP 400 Bad Request: (See reason)
         * The new schedule overlaps with existing schedule(s).
         * Start time is in the past.
@@ -451,7 +509,7 @@ Add a new scheduled showing for a movie.
         * Invalid movie, location, or cinema ID.
     * HTTP 401 Unauthorised: No permission.
 
-### POST /schedule/{schedule id}
+### POST /schedule/{schedule_id}
 Update an existing schedule. Note that this will only succeed if no confirmed orders/tickets exist for the schedule. All tentative orders/tickets for the schedule are cancelled.
 
 Note: The JSON payload should only state keys and values for the fields being updated. Non-updated fields should be excluded.
@@ -468,7 +526,7 @@ Note: The JSON payload should only state keys and values for the fields being up
     * HTTP 400 Bad Request: One or more field names are invalid. No changes made.
     * HTTP 401 Unauthorised: No permission.
 
-### DELETE /schedule/{schedule id}
+### DELETE /schedule/{schedule_id}
 Delete a schedule. 
 
 * Authorisation: Bearer
@@ -497,4 +555,6 @@ Upgrade an accounts role from customer to admin.
     * HTTP 400 Bad Request: (see reason)
         * Invalid account ID
         * Account already an admin
-    * HTTP 401 Unauthorised: No permission
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission

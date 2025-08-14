@@ -48,7 +48,7 @@ export const postAccountChangePassword = asyncHandler(async (req, res, next) => 
     // Extract and check JWT token from header
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
-        return res.status(400).json({ reason: "Missing token" });
+        return res.status(401).json({ reason: "Missing token" });
     }
     const token = authHeader.split(' ')[1];
     const tokenData = Auth.verifyExtractJWT(token);

@@ -159,7 +159,7 @@ describe('Account Change Password', () => {
                 "old": CUSTOMER_2_TEST_PASS,
                 "new": "A Very Good Password 123"
             });
-        expect(missingToken.status).toBe(400);
+        expect(missingToken.status).toBe(401);
         expect(missingToken.body).toEqual({ reason: "Missing token" });
         
         const invalidToken = await request(app).post("/account/change-password")
