@@ -57,6 +57,13 @@ export const verifyExtractJWT = (token) => {
  * @returns null if request is from an admin, otherwise a HTTP response code.
  */
 export const tokenAdminCheck = async (req) => {
+    if (req.headers['authorization'] === undefined) {
+        return 400;
+    }
+    const authHeader = req.headers['authorization'];
+    if (!authHeader.startsWith("Bearer ")) {
+        return 400;
+    }
     const token = req.headers['authorization'].split(' ')[1];
     const jwt = verifyExtractJWT(token);
     if (!jwt.valid) {
