@@ -133,56 +133,48 @@ beforeAll(async () => {
     schLoc1Cin2Id = cinemaResult2.insertId;
 
     // Test data - Schedules
-    sch1Time = new Date();
-    sch1Time = new Date(Math.round(sch1Time.valueOf() / 1000) * 1000);
+    sch1Time = new Date().roundOutMs();
     const [scheduleResult1] = await dbConnPool.execute(
         `INSERT INTO Schedule (movie_id, location_id, cinema_id, start_time, available) VALUES
-            (?, ?, ?, FROM_UNIXTIME(?/1000), true)`,
-        [schMovie1Id, schLoc1Id, schLoc1Cin1Id, sch1Time.valueOf()]
+            (?, ?, ?, FROM_UNIXTIME(?), true)`,
+        [schMovie1Id, schLoc1Id, schLoc1Cin1Id, sch1Time.toEpochSec()]
     );
     if (scheduleResult1.affectedRows !== 1) {
         throw "Failed to insert test schedule 1";
     }
-    sch2Time = new Date();
-    sch2Time = new Date(Math.round(sch2Time.valueOf() / 1000) * 1000);
-    sch2Time.setTime(sch2Time.getTime() + 1*60*60*1000);  // 1 hour in ms
+    sch2Time = new Date().roundOutMs().addHours(1);
     const [scheduleResult2] = await dbConnPool.execute(
         `INSERT INTO Schedule (movie_id, location_id, cinema_id, start_time, available) VALUES
-        (?, ?, ?, FROM_UNIXTIME(?/1000), true)`,
-        [schMovie1Id, schLoc1Id, schLoc1Cin1Id, sch2Time.valueOf()]
+        (?, ?, ?, FROM_UNIXTIME(?), true)`,
+        [schMovie1Id, schLoc1Id, schLoc1Cin1Id, sch2Time.toEpochSec()]
     );
     if (scheduleResult2.affectedRows !== 1) {
         throw "Failed to insert test schedule 2";
     }
-    sch3Time = new Date();
-    sch3Time = new Date(Math.round(sch3Time.valueOf() / 1000) * 1000);
-    sch3Time.setDate(sch3Time.getDate() + 1);
+    sch3Time = new Date().roundOutMs().addDays(1);
     const [scheduleResult3] = await dbConnPool.execute(
         `INSERT INTO Schedule (movie_id, location_id, cinema_id, start_time, available) VALUES
-        (?, ?, ?, FROM_UNIXTIME(?/1000), true)`,
-        [schMovie1Id, schLoc1Id, schLoc1Cin1Id, sch3Time.valueOf()]
+        (?, ?, ?, FROM_UNIXTIME(?), true)`,
+        [schMovie1Id, schLoc1Id, schLoc1Cin1Id, sch3Time.toEpochSec()]
     );
     if (scheduleResult3.affectedRows !== 1) {
         throw "Failed to insert test schedule 3";
     }
     
-    sch4Time = new Date();
-    sch4Time = new Date(Math.round(sch4Time.valueOf() / 1000) * 1000);
+    sch4Time = new Date().roundOutMs();
     const [scheduleResult4] = await dbConnPool.execute(
         `INSERT INTO Schedule (movie_id, location_id, cinema_id, start_time, available) VALUES
-        (?, ?, ?, FROM_UNIXTIME(?/1000), true)`,
-        [schMovie2Id, schLoc1Id, schLoc1Cin2Id, sch4Time.valueOf()]
+        (?, ?, ?, FROM_UNIXTIME(?), true)`,
+        [schMovie2Id, schLoc1Id, schLoc1Cin2Id, sch4Time.toEpochSec()]
     );
     if (scheduleResult4.affectedRows !== 1) {
         throw "Failed to insert test schedule 4";
     }
-    sch5Time = new Date();
-    sch5Time = new Date(Math.round(sch5Time.valueOf() / 1000) * 1000);
-    sch5Time.setTime(sch5Time.getTime() + 1*60*60*1000);  // 1 hour in ms
+    sch5Time = new Date().roundOutMs().addHours(1);
     const [scheduleResult5] = await dbConnPool.execute(
         `INSERT INTO Schedule (movie_id, location_id, cinema_id, start_time, available) VALUES
-            (?, ?, ?, FROM_UNIXTIME(?/1000), true)`,
-        [schMovie3Id, schLoc1Id, schLoc1Cin2Id, sch5Time.valueOf()]
+            (?, ?, ?, FROM_UNIXTIME(?), true)`,
+        [schMovie3Id, schLoc1Id, schLoc1Cin2Id, sch5Time.toEpochSec()]
     );
     if (scheduleResult5.affectedRows !== 1) {
         throw "Failed to insert test schedule 5";
@@ -252,18 +244,16 @@ test("GET /schedule/{location_id}/{cinema_id}?date - Happy path", async () => {
     const adminJWT = loginRes.body.token;
 
     // Loc 1 Cinema 1
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISODateOnly();
     const todaySchedules = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `Bearer ${adminJWT}`);
     expect(todaySchedules.status).toBe(200);
     expect(todaySchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(2);
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrow = new Date().addDays(1).toISODateOnly();
     const tomorrowSchedules = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${tomorrowStr}`)
+        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${tomorrow}`)
         .set('Authorization', `Bearer ${adminJWT}`);
     
     expect(tomorrowSchedules.status).toBe(200);
@@ -295,7 +285,7 @@ test("GET /schedule/{location_id}/{cinema_id}?date - Bad authorisation", async (
     expect(nonAdminLoginRes.status).toBe(200);
     const nonAdminJWT = nonAdminLoginRes.body.token;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISODateOnly();
 
     const noAuth = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`);

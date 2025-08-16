@@ -6,6 +6,7 @@ import { orderRouter } from './routes/order.js';
 import { scheduleRouter } from './routes/schedule.js';
 import { dbInit } from './services/database.js';
 import { checkerInitValid } from './utils/checker.js';
+import { setDateExtensions } from './utils/dateExtension.js';
 
 const PORT = 8080
 
@@ -25,6 +26,7 @@ app.use('/schedule', scheduleRouter);
 if (!checkerInitValid()) {
     process.exit(1);
 }
+setDateExtensions();
 
 await dbInit();
 
