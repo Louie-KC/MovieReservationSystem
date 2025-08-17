@@ -1,7 +1,16 @@
 import winston from 'winston';
 
+const levels = {
+    fatal: 0,
+    error: 1,
+    warn:  2,
+    info:  3,
+    debug: 4
+};
+
 export const logger = winston.createLogger({
     level: (process.env.LOG_LEVEL || 'INFO').toLowerCase(),
+    levels: levels,
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.printf(({ timestamp, level, message }) => 
