@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger.js';
 import { dbConnPool } from "../services/database.js";
 
 export class Location {
@@ -12,7 +13,7 @@ export class Location {
             );
             return rows;
         } catch (err) {
-            console.log(err);
+            logger.error(`Location.findAll(): ${err}`);
             return null;
         }
     }

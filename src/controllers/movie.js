@@ -17,7 +17,6 @@ export const getMovieQuery = asyncHandler(async (req, res, next) => {
         : await Movie.findAll();
 
     if (!movies) {
-        console.log(`getMovieQuery: Query error. genre: ${genre}`);
         return res.status(500).send();
     }
 

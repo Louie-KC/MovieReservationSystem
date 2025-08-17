@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Check, verify } from "../utils/checker.js";
+import { logger } from '../utils/logger.js';
 import { dbConnPool } from "../services/database.js"; 
 
 const JWT_EXPIRY = "2h";
@@ -71,7 +72,6 @@ export const tokenAdminCheck = async (req) => {
     }
     const admin = await isAdmin(jwt.userId);
     if (admin.err) {
-        console.log(admin.err);
         return 500;
     }
     if (!admin.isAdmin) {
@@ -107,6 +107,7 @@ export const isAdmin = async (userId) => {
             status.isAdmin = result[0].admin === 1;
         }
     } catch (err) {
+        logger.error(`isAdmin(${userId}): ${err}`);
         status.err = err;
     }
 

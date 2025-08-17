@@ -1,4 +1,5 @@
 import { dbConnPool } from "../services/database.js"; 
+import { logger } from '../utils/logger.js';
 import { Check, verify } from "../utils/checker.js";
 
 export class Schedule {
@@ -20,19 +21,19 @@ export class Schedule {
 
     static validateFields(data) {
         if (!verify(data.movie, [Check.IS_ONLY_DIGITS])) {
-            console.log("movie failed");
+            logger.debug("movie fail");
             return false;
         }
         if (!verify(data.location, [Check.IS_ONLY_DIGITS])) {
-            console.log("location failed");
+            logger.debug("location fail");
             return false;
         }
         if (!verify(data.cinema, [Check.IS_ONLY_DIGITS])) {
-            console.log("cinema failed");
+            logger.debug("cinema fail");
             return false;
         }
         if (!verify(data.time, [Check.IS_DATETIME])) {
-            console.log("time failed");
+            logger.debug("time fail");
             return false;
         }
         return true;
@@ -64,6 +65,7 @@ export class Schedule {
             }
             status.success = result.affectedRows === 1;
         } catch (err) {
+            logger.error(`Schedule.saveNewInDB(${JSON.stringify(this)}) : ${err}`);
             status.err = err;
         }
 
@@ -96,7 +98,7 @@ export class Schedule {
             }
             return rows[0];
         } catch (err) {
-            console.log(err);
+            logger.error(`Schedule.findById(${id}): ${err}`);
             return null;
         }
     }
@@ -133,7 +135,7 @@ export class Schedule {
 
             return rows;
         } catch (err) {
-            console.log(err);
+            logger.error(`Schedule.findSeatingAvailabilityById(${id}): ${err}`);
             return null;
         }
     }
@@ -166,7 +168,7 @@ export class Schedule {
             
             return rows;
         } catch (err) {
-            console.log(err);
+            logger.error(`Schedule.findCinemaSchedule(${locationId},${cinemaId},${date}): ${err}`);
             return null;
         }
     }

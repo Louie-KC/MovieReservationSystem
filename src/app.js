@@ -7,11 +7,13 @@ import { scheduleRouter } from './routes/schedule.js';
 import { dbInit } from './services/database.js';
 import { checkerInitValid } from './utils/checker.js';
 import { setDateExtensions } from './utils/dateExtension.js';
+import { requestLogger } from './utils/logger.js';
 
 const PORT = 8080
 
 export const app = express();
 app.use(express.json());
+app.use(requestLogger);
 
 app.get("/health", (_, res) => {
     res.send();

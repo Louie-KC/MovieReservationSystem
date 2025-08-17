@@ -1,4 +1,5 @@
 import { dbConnPool } from "../services/database.js"; 
+import { logger } from '../utils/logger.js';
 import { Check, verify } from "../utils/checker.js";
 
 export class Movie {
@@ -31,24 +32,24 @@ export class Movie {
     static validateFields(data) {
         // Movie ID is optional in the case of adding a new movie
         if (data.id && !verify(data.id, [Check.IS_ONLY_DIGITS])) {
-            console.log("id failed");
+            logger.debug("id fail");
             return false;
         }
         if (!verify(data.title, [Check.IS_ALPHANUMERICAL]) || data.title.length < 4) {
-            console.log("title failed", data.title);
+            logger.debug("title fail");
             return false;
         }
         if (!verify(data.description, [Check.IS_ALPHANUMERICAL]) || data.description.length < 4) {
-            console.log("description failed");
+            logger.debug("description fail");
             return false;
         }
         if (!verify(data.duration, [Check.IS_POSITIVE_NUMBER, Check.IS_ONLY_DIGITS])) {
-            console.log("duration failed");
+            logger.debug("duration fail");
             return false;
         }
         // TODO: poster
         if (!verify(data.genres, [Check.IS_ALPHABETICAL_ARR])) {
-            console.log("genres failed");
+            logger.debug("genres fail");
             return false;
         }
         return true;
@@ -107,7 +108,7 @@ export class Movie {
                 await conn.rollback();
             }
         } catch (err) {
-            console.log(err);
+            logger.error(`Movie.saveNewInDB(${JSON.stringify(this)}) : ${err}`);
         }
         return status;
     }
@@ -124,7 +125,7 @@ export class Movie {
             );
             return rows.map((row) => new Movie(row));
         } catch (err) {
-            console.log(err);
+            logger.error(`Movie.findAll(): ${err}`);
             return null;
         }
     }
@@ -145,7 +146,7 @@ export class Movie {
             );
             return rows.map((row) => new Movie(row));
         } catch (err) {
-            console.log(err);
+            logger.error(`Movie.findByGenre(${genre}): ${err}`);
             return null;
         }
     }
@@ -168,7 +169,7 @@ export class Movie {
 
             return new Movie(row);
         } catch (err) {
-            console.log(err);
+            logger.error(`Movie.findByID(${id}): ${err}`);
             return null;
         }
     }

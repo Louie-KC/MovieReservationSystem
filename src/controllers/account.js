@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { Check, verify } from '../utils/checker.js';
+import { logger } from '../utils/logger.js';
 import { Account } from '../models/account.js';
 import * as Auth from '../services/auth.js';
 
@@ -85,7 +86,6 @@ export const adminGetAccountById = asyncHandler(async (req, res, next) => {
     const result = await Account.findById(queryAccountId);
 
     if (result.err) {
-        console.log(result.err);
         if (result.err === "No result") {
             return res.status(400).json({ reason: "No account with account_id" });
         } else {
@@ -126,9 +126,8 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
 
     // DB query
     const result = await Account.findByPartialInfo(queryName, queryEmail);
-    console.log(result);
+    logger.debug(result);
     if (result.err) {
-        console.log(result.err);
         return res.status(500).send();
     }
 
@@ -149,7 +148,6 @@ export const adminPromoteToAdmin = asyncHandler(async (req, res, next) => {
 
     const status = await Account.changeKind(req.body, 'admin');
     if (status.err) {
-        console.log(status.err);
         return res.status(500).send();
     }
     if (status.changed) {

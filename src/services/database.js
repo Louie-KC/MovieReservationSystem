@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger.js';
 import mysql from 'mysql2/promise';
 
 export let dbConnPool = null;
@@ -10,5 +11,5 @@ export const dbInit = () => {
         password: process.env.MYSQL_DB_PASS,
         timezone: 'Z' // Avoid converting from UTC to local time w/ SELECT queries
     })
-    console.log("dbInit complete");
+    logger.info("dbInit complete");
 }

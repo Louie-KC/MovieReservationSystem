@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
-import { dbConnPool } from "../services/database.js"; 
+import { dbConnPool } from "../services/database.js";
+import { logger } from '../utils/logger.js';
 import { Check, verify } from "../utils/checker.js";
 
 const SALT_ROUNDS = 10;
@@ -14,19 +15,19 @@ export class Account {
      */
     static validateFieldsRegister(body) {
         if (!verify(body.given_name, [Check.IS_ALPHABETICAL])) {
-            console.log("given_name fail");
+            logger.debug("given_name fail");
             return false;
         }
         if (!verify(body.last_name, [Check.IS_ALPHABETICAL])) {
-            console.log("last_name fail");
+            logger.debug("last_name fail");
             return false;
         }
         if (!verify(body.email, [Check.IS_EMAIL])) {
-            console.log("email fail");
+            logger.debug("email fail");
             return false;
         }
         if (!verify(body.password, [Check.IS_VALID_PASSWORD])) {
-            console.log("password fail");
+            logger.debug("password fail");
             return false;
         }
         
@@ -41,11 +42,11 @@ export class Account {
      */
     static validateFieldsLogin(body) {
         if (!verify(body.email, [Check.IS_EMAIL])) {
-            console.log("email fail");
+            logger.debug("email fail");
             return false;
         }
         if (!verify(body.password, [Check.IS_VALID_PASSWORD])) {
-            console.log("password fail");
+            logger.debug("password fail");
             return false;
         }
         return true;
@@ -59,15 +60,15 @@ export class Account {
      */
     static validateFieldsChangePassword(body) {
         if (!verify(body.old, [Check.IS_VALID_PASSWORD])) {
-            console.log("old fail");
+            logger.debug("old fail");
             return false;
         }
         if (!verify(body.new, [Check.IS_VALID_PASSWORD])) {
-            console.log("new fail");
+            logger.debug("new fail");
             return false;
         }
         if (body.new === body.old) {
-            console.log("new === old");
+            logger.debug("new === old");
             return false;
         }
         return true;
@@ -81,7 +82,7 @@ export class Account {
      */
     static validateFieldsChangeKind(body) {
         if (!verify(body.account_id, [Check.IS_ONLY_DIGITS])) {
-            console.log("account_id fail");
+            logger.debug("account_id fail");
             return false;
         }
         return true;
@@ -108,6 +109,7 @@ export class Account {
                 status.emailAlreadyTaken = result.affectedRows === 0;
             })
         } catch (err) {
+            logger.error(`Account.registerInDb(${JSON.stringify(validatedBody)}) : ${err}`);
             status.err = err;
         }
         return status;
@@ -142,6 +144,7 @@ export class Account {
                 storedHash = result[0].password_hash;
             }
         } catch (err) {
+            logger.error(`Account.login(${JSON.stringify(validatedBody)}) : ${err}`);
             status.err = err;
         }
         
@@ -182,6 +185,7 @@ export class Account {
                 status.correctOld = true;
             }
         } catch (err) {
+            logger.error(`Account.changePassword(${userId},${JSON.stringify(validatedBody)}) : ${err}`);
             status.err = err;
         }
 
@@ -201,6 +205,7 @@ export class Account {
                 status.changed = result.affectedRows === 1;
             });
         } catch (err) {
+            logger.error(`Account.changePassword(${userId},${JSON.stringify(validatedBody)}) : ${err}`);
             status.err = err;
         }
         return status;
@@ -229,6 +234,7 @@ export class Account {
             );
             status.changed = result.affectedRows === 1;
         } catch (err) {
+            logger.error(`Account.changeKind(${JSON.stringify(validatedBody)},${kind}) : ${err}`);
             status.err = err;
         }
 
@@ -264,9 +270,10 @@ export class Account {
                 [`%${name}%`, `%${name}%`, `%${email}%`]
             );
 
-            console.log(rows);
+            logger.debug(rows);
             status.info = rows;
         } catch (err) {
+            logger.error(`Account.findByPartialInfo(${name},${email}) : ${err}`);
             status.err = err;
         }
 
@@ -298,6 +305,10 @@ export class Account {
             }
         } catch (err) {
             status.err = err;
+        }
+
+        if (status.err) {
+            logger.error(`Account.findById(${id}) : ${status.err}`);
         }
 
         return status;

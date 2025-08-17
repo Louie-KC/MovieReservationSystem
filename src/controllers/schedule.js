@@ -107,7 +107,6 @@ export const adminPutNewSchedule = asyncHandler(async (req, res, next) => {
 
     const status = await schedule.saveNewInDb();
     if (status.err) {
-        console.log(status.err);
         return res.status(500).send();
     }
     if (!status.success) {

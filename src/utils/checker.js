@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 
 export const noSemiColon = (value) => value.indexOf(';') === -1;
 
@@ -80,7 +81,7 @@ export const checkerInitValid = () => {
     indexCopy.sort();
 
     if (fnsCopy.length !== indexCopy.length) {
-        console.log("Checker function array & function index array are of unequal lengths");
+        logger.fatal("Checker function array & function index array are of unequal lengths");
         return false;
     } 
 
@@ -96,10 +97,10 @@ export const checkerInitValid = () => {
     }
 
     if (fnsDuplicates > 0 || indexDuplicates > 0) {
-        console.log("checker functions and/or duplicates contain duplicates.");
-        console.log(`checkFns: ${fnsDuplicates}. Check: ${indexDuplicates}`);
+        logger.fatal("checker functions and/or duplicates contain duplicates.");
+        logger.fatal(`checkFns: ${fnsDuplicates}. Check: ${indexDuplicates}`);
         return false;
     }
-    console.log("checkerInitValid passed");
+    logger.info("checkerInitValid passed");
     return true;
 }
