@@ -3,7 +3,7 @@ import { Check, verify } from "../utils/checker.js";
 import { logger } from '../utils/logger.js';
 import { dbConnPool } from "../services/database.js"; 
 
-const JWT_EXPIRY = "2h";
+const JWT_EXPIRY = process.env.JWT_EXPIRE_TIME;
 
 /**
  * Create a new JWT for a user.

@@ -3,7 +3,7 @@ import { dbConnPool } from "../services/database.js";
 import { logger } from '../utils/logger.js';
 import { Check, verify } from "../utils/checker.js";
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = +process.env.PASSWORD_SALT_ROUNDS;  // + convert to number
 
 export class Account {
 
