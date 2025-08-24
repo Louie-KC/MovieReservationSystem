@@ -19,6 +19,11 @@ const SCH_LOC_1_CINEMA_2_NAME = "TEST SCH LOC CINEMA 2";
 var schLoc1Cin1Id = null;
 var schLoc1Cin2Id = null;
 
+const schL1C1SeatRowMin = 'A'.charCodeAt(0);
+const schL1C1SeatRowMax = 'E'.charCodeAt(0);
+const schL1C1SeatColMin = 1;
+const schL1C1SeatColMax = 10;
+
 var sch1Id = null;
 var sch2Id = null;
 var sch3Id = null;
@@ -39,11 +44,38 @@ const NON_ADMIN_PASSWORD = "TestPassword1";
 
 async function clearTestScheduleData() {
     await dbConnPool.execute(
+        `DELETE rs
+        FROM ReservationSeat rs
+        INNER JOIN Reservation r ON rs.reservation_id = r.id
+        INNER JOIN Schedule s ON r.schedule_id = s.id
+        INNER JOIN Movie m ON s.movie_id = m.id
+        WHERE m.title IN (?, ?, ?)`,
+        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+    );
+
+    await dbConnPool.execute(
+        `DELETE r
+        FROM Reservation r
+        INNER JOIN Schedule s ON r.schedule_id = s.id
+        INNER JOIN Movie m ON s.movie_id = m.id
+        WHERE m.title IN (?, ?, ?)`,
+        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+    );
+
+    await dbConnPool.execute(
         `DELETE s
         FROM Schedule s
         INNER JOIN Movie m ON s.movie_id = m.id
         WHERE m.title IN (?, ?, ?)`,
         [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+    );
+
+    await dbConnPool.execute(
+        `DELETE cs
+        FROM CinemaSeat cs
+        INNER JOIN Cinema c ON cs.cinema_id = c.id
+        WHERE c.friendly_name IN (?)`,
+        [SCH_LOC_1_CINEMA_1_NAME]
     );
 
     await dbConnPool.execute(
@@ -72,7 +104,7 @@ async function clearTestScheduleData() {
 }
 
 beforeAll(async () => {
-        await clearTestScheduleData();
+    await clearTestScheduleData();
         
     // Test data - Movies to be scheduled
     const [movieResult1] = await dbConnPool.execute(
@@ -132,6 +164,21 @@ beforeAll(async () => {
     schLoc1Cin1Id = cinemaResult1.insertId;
     schLoc1Cin2Id = cinemaResult2.insertId;
 
+    // Test data - Seats for Location 1 Cinema 1
+    for (var row = schL1C1SeatRowMin; row <= schL1C1SeatRowMax; row++) {
+        for (var col = schL1C1SeatColMin; col <= schL1C1SeatColMax; col++) {
+            const rowString = String.fromCharCode(row);
+            const [seatInsertRes] = await dbConnPool.execute(
+                `INSERT INTO CinemaSeat (cinema_id, location_id, seat_row, seat_number, kind)
+                VALUES (?, ?, ?, ?, 'regular')`,
+                [schLoc1Cin1Id, schLoc1Id, rowString, col]
+            );
+            if (seatInsertRes.affectedRows !== 1) {
+                throw `Failed to insert seat ${rowString}${col} to loc 1 cin 1`
+            }
+        }
+    }
+
     // Test data - Schedules
     sch1Time = new Date().roundOutMs();
     const [scheduleResult1] = await dbConnPool.execute(
@@ -186,6 +233,56 @@ beforeAll(async () => {
     sch4Id = scheduleResult4.insertId;
     sch5Id = scheduleResult5.insertId;
 
+    // Test existing reservations to ensure seat availability is correct
+    const [confirmedReservationInsertResult] = await dbConnPool.execute(
+        `INSERT INTO Reservation (schedule_id, kind, last_updated) VALUES
+            (?, 'confirmed', NOW())`,
+        [sch1Id]
+    );
+    if (confirmedReservationInsertResult.affectedRows !== 1) {
+        throw "Failed to insert confirmed reservation cin 1 loc 1 sch 1";
+    }
+    const confirmedReservationId = confirmedReservationInsertResult.insertId;
+    const [confirmedReservSeatInsertResult] = await dbConnPool.execute(
+        `INSERT INTO ReservationSeat (reservation_id, seat_id) VALUES (?, (
+            SELECT cs.id
+            FROM CinemaSeat cs
+            WHERE cs.cinema_id = ?
+            AND cs.location_id = ?
+            AND cs.seat_row = 'A'
+            AND cs.seat_number = 1
+        ))`,
+        [confirmedReservationId, schLoc1Cin1Id, schLoc1Id]
+    );
+    if (confirmedReservSeatInsertResult.affectedRows !== 1) {
+        throw "Failed to insert seat for confirmed reservation cin 1 loc 1 sch 1";
+    }
+
+    const [tentativeReservationInsertResult] = await dbConnPool.execute(
+        `INSERT INTO Reservation (user_id, schedule_id, kind, last_updated) VALUES
+            (NULL, ?, 'tentative', NOW())`,
+        [sch1Id]
+    );
+    if (tentativeReservationInsertResult.affectedRows !== 1) {
+        throw "Failed to insert tentative reservation cin 1 loc 1 sch 1";
+    }
+    const tentativeReservationId = tentativeReservationInsertResult.insertId;
+    const [tentativeReservSeatInsertResult] = await dbConnPool.execute(
+        `INSERT INTO ReservationSeat (reservation_id, seat_id) VALUES (?, (
+            SELECT cs.id
+            FROM CinemaSeat cs
+            WHERE cs.cinema_id = ?
+            AND cs.location_id = ?
+            AND cs.seat_row = 'A'
+            AND cs.seat_number = 2
+        ))`,
+        [tentativeReservationId, schLoc1Cin1Id, schLoc1Id]
+    );
+    if (tentativeReservSeatInsertResult.affectedRows !== 1) {
+        throw "Failed to insert seat for tentative reservation cin 1 loc 1 sch 1";
+    }
+
+    // Test accounts
     const adminPassHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
     const [testAdminResult1] = await dbConnPool.execute(
         `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
@@ -232,6 +329,19 @@ test("GET /schedule/{schedule_id} - No schedule with schedule_id", async () => {
 test("GET /schedule/{schedule_id} - Invalid schedule_id format", async () => {
     const res = await request(app).get(`/schedule/abc`).send();
     expect(res.status).toBe(400);
+});
+
+test("GET /schedule/{schedule_id}/seats", async () => {
+    const res = await request(app).get(`/schedule/${sch1Id}/seats`).send();
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+
+    const seatA1 = res.body.find(seatObj => seatObj.seat === "A1");  // reserved confirmed
+    const seatA2 = res.body.find(seatObj => seatObj.seat === "A2");  // reserved tentative
+    const seatA3 = res.body.find(seatObj => seatObj.seat === "A3");  // not reserved
+    expect(seatA1).toEqual({ seat: "A1", available: false });
+    expect(seatA2).toEqual({ seat: "A2", available: false });
+    expect(seatA3).toEqual({ seat: "A3", available: true });
 });
 
 test("GET /schedule/{location_id}/{cinema_id}?date - Happy path", async () => {

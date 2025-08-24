@@ -123,6 +123,7 @@ export class Schedule {
                     FROM Reservation r
                     INNER JOIN ReservationSeat rs ON r.id = rs.reservation_id
                     WHERE r.schedule_id = ?
+                    AND r.kind != 'cancelled'
                 ) AS reserved ON cs.id = reserved.seat_id AND s.id = reserved.schedule_id
                 WHERE s.id = ?`,
                 [id, id]
