@@ -20,15 +20,15 @@ export class Schedule {
     }
 
     static validateFields(data) {
-        if (!verify(data.movie, [Check.IS_ONLY_DIGITS])) {
+        if (!verify(data.movie, [Check.IS_INTEGER])) {
             logger.debug("movie fail");
             return false;
         }
-        if (!verify(data.location, [Check.IS_ONLY_DIGITS])) {
+        if (!verify(data.location, [Check.IS_INTEGER])) {
             logger.debug("location fail");
             return false;
         }
-        if (!verify(data.cinema, [Check.IS_ONLY_DIGITS])) {
+        if (!verify(data.cinema, [Check.IS_INTEGER])) {
             logger.debug("cinema fail");
             return false;
         }

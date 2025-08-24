@@ -3,9 +3,10 @@ import {
     verify,
     Check,
     noSemiColon,
-    isOnlyDigits,
+    isInteger,
     isAlphabetical,
     isAlphanumerical,
+    isIntegerArray,
     isAlphabeticalArray,
     isAlphanumericalArray,
     isPositiveNumber,
@@ -34,19 +35,19 @@ test('Ensure no semicolons', () => {
 });
 
 test('Ensure only digits', () => {
-    expect(isOnlyDigits("")).toBe(false);
-    expect(isOnlyDigits("0")).toBe(true);
-    expect(isOnlyDigits("9")).toBe(true);
-    expect(isOnlyDigits(" 9")).toBe(false);
-    expect(isOnlyDigits("1234")).toBe(true);
-    expect(isOnlyDigits("1234a")).toBe(false);
-    expect(isOnlyDigits("123 4")).toBe(false);
-    expect(isOnlyDigits("1234.0")).toBe(false);
-    expect(isOnlyDigits("12.345")).toBe(false);
-    expect(isOnlyDigits("12HK345")).toBe(false);
-    expect(isOnlyDigits("01234567890123456789")).toBe(true);
-    expect(isOnlyDigits("0123!")).toBe(false);
-    expect(isOnlyDigits("0123;")).toBe(false);
+    expect(isInteger("")).toBe(false);
+    expect(isInteger("0")).toBe(true);
+    expect(isInteger("9")).toBe(true);
+    expect(isInteger(" 9")).toBe(false);
+    expect(isInteger("1234")).toBe(true);
+    expect(isInteger("1234a")).toBe(false);
+    expect(isInteger("123 4")).toBe(false);
+    expect(isInteger("1234.0")).toBe(false);
+    expect(isInteger("12.345")).toBe(false);
+    expect(isInteger("12HK345")).toBe(false);
+    expect(isInteger("01234567890123456789")).toBe(true);
+    expect(isInteger("0123!")).toBe(false);
+    expect(isInteger("0123;")).toBe(false);
 });
 
 test('Ensure alphabetical (no digits or symbols). Spaces allowed', () => {
@@ -77,6 +78,19 @@ test('Ensure alphanumerical (no symbols). Spaces allowed', () => {
     expect(isAlphanumerical("567 qwerty123asdfg")).toBe(true);
     expect(isAlphanumerical("567 qwerty ; asdfg")).toBe(false);
 });
+
+test('Ensure numerical (digits only) array', () => {
+    expect(isIntegerArray(1)).toBe(false);
+    expect(isIntegerArray([])).toBe(true);
+    expect(isIntegerArray([""])).toBe(false);
+    expect(isIntegerArray([1])).toBe(true);
+    expect(isIntegerArray(["1"])).toBe(true);
+    expect(isIntegerArray([" 1"])).toBe(false);
+    expect(isIntegerArray(["1", 2, 3])).toBe(true);
+    expect(isIntegerArray(["1", 2, "3 "])).toBe(false);
+    expect(isIntegerArray(["1", "a", 3])).toBe(false);
+    expect(isIntegerArray(["1", ";", 3])).toBe(false);
+})
 
 test('Ensure alphabetical (no digits or symbols) array. Spaces allowed', () => {
     expect(isAlphabeticalArray([])).toBe(true);
@@ -223,6 +237,6 @@ test('verify one condition', () => {
 test('verify multiple conditions', () => {
     expect(verify("aB 43", [Check.IS_ALPHANUMERICAL, Check.NO_SEMICOLON])).toBe(true);
     expect(verify("aaa777", [Check.IS_ALPHABETICAL, Check.IS_ALPHANUMERICAL])).toBe(false);
-    expect(verify("123", [Check.IS_POSITIVE_NUMBER, Check.IS_ONLY_DIGITS])).toBe(true);
-    expect(verify("123", [Check.IS_POSITIVE_NUMBER, Check.IS_ONLY_DIGITS, Check.IS_ALPHABETICAL])).toBe(false);
+    expect(verify("123", [Check.IS_POSITIVE_NUMBER, Check.IS_INTEGER])).toBe(true);
+    expect(verify("123", [Check.IS_POSITIVE_NUMBER, Check.IS_INTEGER, Check.IS_ALPHABETICAL])).toBe(false);
 });

@@ -38,7 +38,7 @@ export const verifyExtractJWT = (token) => {
 
     jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
         if (!err) {
-            status.valid = verify(data.userId, [Check.IS_ONLY_DIGITS])
+            status.valid = verify(data.userId, [Check.IS_INTEGER])
                         && verify(data.email, [Check.IS_EMAIL]);
             status.userId = data.userId;
             status.email = data.email;

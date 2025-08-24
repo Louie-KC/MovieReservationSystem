@@ -2,13 +2,17 @@ import { logger } from './logger.js';
 
 export const noSemiColon = (value) => value.indexOf(';') === -1;
 
-export const isOnlyDigits = (value) => /^[0-9]+$/.test(value);
+export const isInteger = (value) => /^[0-9]+$/.test(value);
 
 export const isAlphabetical = (value) => typeof value === "string"
     && /^[a-zA-Z ]*$/.test(value);
 
 export const isAlphanumerical = (value) => typeof value === "string"
     && /^[a-zA-Z0-9 ]*$/.test(value);
+
+export const isIntegerArray = (value) => Array.isArray(value)
+    && value.map(v => isInteger(v))
+            .reduce((a, b) => a && b, true);
 
 export const isAlphabeticalArray = (value) => Array.isArray(value)
     && value.map(v => isAlphabetical(v))
@@ -39,9 +43,10 @@ export const isDateTime = (value) => value.split(' ').length === 2
 
 const checkFns = [
     noSemiColon,
-    isOnlyDigits,
+    isInteger,
     isAlphabetical,
     isAlphanumerical,
+    isIntegerArray,
     isAlphabeticalArray,
     isAlphanumericalArray,
     isPositiveNumber,
@@ -54,9 +59,10 @@ const checkFns = [
 
 export const Check = Object.freeze({
     NO_SEMICOLON:           checkFns.indexOf(noSemiColon),
-    IS_ONLY_DIGITS:         checkFns.indexOf(isOnlyDigits),
+    IS_INTEGER:             checkFns.indexOf(isInteger),
     IS_ALPHABETICAL:        checkFns.indexOf(isAlphabetical),
     IS_ALPHANUMERICAL:      checkFns.indexOf(isAlphanumerical),
+    IS_INTEGER_ARR:         checkFns.indexOf(isIntegerArray),
     IS_ALPHABETICAL_ARR:    checkFns.indexOf(isAlphabeticalArray),
     IS_ALPHANUMERICAL_ARR:  checkFns.indexOf(isAlphanumericalArray),
     IS_POSITIVE_NUMBER:     checkFns.indexOf(isPositiveNumber),

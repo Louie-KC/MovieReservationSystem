@@ -12,7 +12,7 @@ export const getScheduleQuery = asyncHandler(async (req, res, next) => {
 // GET /schedule/{schedule_id}
 export const getScheduleById = asyncHandler(async (req, res, next) => {
     const scheduleId = req.params.schedule_id;
-    if (!verify(scheduleId, [Check.IS_ONLY_DIGITS])) {
+    if (!verify(scheduleId, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: "Invalid schedule id value" });
     }
 
@@ -33,7 +33,7 @@ export const getScheduleById = asyncHandler(async (req, res, next) => {
 // GET /schedule/{schedule_id}/seats
 export const getScheduleSeatsById = asyncHandler(async (req, res, next) => {
     const scheduleId = req.params.schedule_id;
-    if (!verify(scheduleId, [Check.IS_ONLY_DIGITS])) {
+    if (!verify(scheduleId, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: "Invalid schedule id value" });
     }
 
@@ -61,11 +61,11 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck).send();
     }
 
-    if (!verify(location_id, [Check.IS_ONLY_DIGITS])) {
+    if (!verify(location_id, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: `location_id (${locationId}) is non-numeric` });
     }
 
-    if (!verify(cinema_id, [Check.IS_ONLY_DIGITS])) {
+    if (!verify(cinema_id, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: `cinema_id (${cinemaId}) is non-numeric` });
     }
 

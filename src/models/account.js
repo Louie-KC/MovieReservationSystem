@@ -81,7 +81,7 @@ export class Account {
      * @returns {boolean} true if valid, false otherwise
      */
     static validateFieldsChangeKind(body) {
-        if (!verify(body.account_id, [Check.IS_ONLY_DIGITS])) {
+        if (!verify(body.account_id, [Check.IS_INTEGER])) {
             logger.debug("account_id fail");
             return false;
         }

@@ -27,7 +27,7 @@ export const getMovieQuery = asyncHandler(async (req, res, next) => {
 export const getMovieById = asyncHandler(async (req, res, next) => {
     const movieId = req.params.movie_id;
 
-    if (!verify(movieId, [Check.IS_ONLY_DIGITS])) {
+    if (!verify(movieId, [Check.IS_INTEGER])) {
         return res.status(400).json({reason: "Invalid movie id"});
     }
 

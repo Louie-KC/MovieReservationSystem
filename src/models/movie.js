@@ -31,7 +31,7 @@ export class Movie {
      */
     static validateFields(data) {
         // Movie ID is optional in the case of adding a new movie
-        if (data.id && !verify(data.id, [Check.IS_ONLY_DIGITS])) {
+        if (data.id && !verify(data.id, [Check.IS_INTEGER])) {
             logger.debug("id fail");
             return false;
         }
@@ -43,7 +43,7 @@ export class Movie {
             logger.debug("description fail");
             return false;
         }
-        if (!verify(data.duration, [Check.IS_POSITIVE_NUMBER, Check.IS_ONLY_DIGITS])) {
+        if (!verify(data.duration, [Check.IS_POSITIVE_NUMBER, Check.IS_INTEGER])) {
             logger.debug("duration fail");
             return false;
         }

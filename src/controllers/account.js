@@ -74,7 +74,7 @@ export const postAccountChangePassword = asyncHandler(async (req, res, next) => 
 // GET /account/{account_id}
 export const adminGetAccountById = asyncHandler(async (req, res, next) => {
     const queryAccountId = req.params.account_id;
-    if (!verify(queryAccountId, [Check.IS_ONLY_DIGITS])) {
+    if (!verify(queryAccountId, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: "account_id is not an integer" });
     }
 
