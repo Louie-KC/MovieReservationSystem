@@ -256,14 +256,16 @@ Retrieve a list of bookings for a logged in user (token).
       ```json
       [
           {
-              "id": <ticket ID>,
+              "reservation": <reservation ID>,
+              "schedule": <schedule ID>,
               "status": "confirmed" | "tentative" | "cancelled",
+              "title": <movie title>,
               "time": <ticket movie start time>,
               "address": <location address>,
               "cinema": <cinema friendly name>,
               "seats": [
-                  <seat id 1>,
-                  <seat id 2>,
+                  <seat label 1>,
+                  <seat label 2>,
                   ...
               ]
           },
@@ -282,8 +284,8 @@ Temporarily reserve a ticket and its accompanying seats for a scheduled movie.
   {
       "schedule": <schedule ID>,
       "seats": [
-          <seat id 1>,
-          <seat id 2>,
+          <seat label 1>,
+          <seat label 2>,
           ...
       ]
   }
@@ -292,11 +294,11 @@ Temporarily reserve a ticket and its accompanying seats for a scheduled movie.
     * HTTP 200 OK:
       ```json
       {
-          "id": <reserved ticket ID>
+          "id": <reservation ID>
       }
       ```
     * HTTP 400 Bad Request: (see reason)
-        * Invalid schedule ID
+        * Invalid reservation ID
         * Schedule start time is in the past
         * Seats are unavailable
     * HTTP 401 Unauthorised: Invalid token.
@@ -308,32 +310,32 @@ Confirm an order for a reserved movie ticket.
 * Expected JSON payload:
   ```json
   {
-      "id": <reserved ticket ID>
+      "id": <reservation ID>
   }
   ```
 * Possible responses
-    * HTTP 200 OK: Ticket has been successfully reserved
+    * HTTP 200 OK: Ticket/reservation has been successfully confirmed
     * HTTP 400 Bad Request: (see reason)
         * The reservation has expired/is no longer tentative.
         * The reservation ID is invalid (does exist or for another user).
     * HTTP 401 Unauthorised: Invalid token.
 
 ### POST /order/cancel
-Cancel an order for a movie ticket. Cancellations are only possible if the start time is in the future.
+Cancel an order for a movie ticket/reservation. Cancellations are only possible if the start time is in the future.
 
 * Authentication: Bearer
 * Expected JSON payload:
   ```json
   {
-      "id": <ticket ID>
+      "id": <reservation ID>
   }
   ```
 * Possible responses
-    * HTTP 200 Ok: Ticket has been successfully cancelled.
+    * HTTP 200 Ok: Ticket/reservation has been successfully cancelled.
     * HTTP 400 Bad Request: (see reason)
         * The start time of the ticket movie has passed.
-        * Invalid ticket ID
-        * Ticket already cancelled
+        * Invalid reservation ID
+        * Ticket/reservation already cancelled
     * HTTP 401 Unauthorised: Invalid token.
 
 

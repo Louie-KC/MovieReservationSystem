@@ -43,7 +43,7 @@ CREATE TABLE Cinema (
 );
 
 CREATE TABLE CinemaSeat (
-    id          BIGINT,
+    id          BIGINT  NOT NULL AUTO_INCREMENT,
     cinema_id   BIGINT  NOT NULL,
     location_id BIGINT  NOT NULL,
     seat_row    CHAR(1) NOT NULL,
