@@ -1,5 +1,6 @@
 import { Account } from '../../src/models/account.js';
 import { Movie } from '../../src/models/movie.js';
+import { Order } from '../../src/models/order.js';
 import { Schedule } from '../../src/models/schedule.js';
 
 describe("Account - register verification", () => {
@@ -305,4 +306,75 @@ describe("Schedule - field validation", () => {
         badFormat2.time = "25-08-09 19:10:00";
         expect(Schedule.validateFields(badFormat2)).toBe(false);
     });
+});
+
+describe("Order - reserve validation", () => {
+    const valid = {
+        schedule: 1,
+        seats: [ "A1" ]
+    };
+
+    it('should be valid - single seat', () => {
+        expect(Order.validateFieldsReserve(valid)).toBe(true);
+    });
+
+    it('should be valid - multiple seats', () => {
+        const validMultiple = JSON.parse(JSON.stringify(valid));
+        validMultiple.seats = [ "B1", "B2", "B3" ];
+        expect(Order.validateFieldsReserve(validMultiple)).toBe(true);
+    });
+
+    it('should be invalid - bad schedule', () => {
+        const missingSchedule = JSON.parse(JSON.stringify(valid));
+        delete missingSchedule.schedule;
+        expect(Order.validateFieldsReserve(missingSchedule)).toBe(false);
+
+        const alphabeticalSchedule = JSON.parse(JSON.stringify(valid));
+        alphabeticalSchedule.schedule = "A";
+        expect(Order.validateFieldsReserve(alphabeticalSchedule)).toBe(false);
+
+        const alphanumericSchedule = JSON.parse(JSON.stringify(valid));
+        alphanumericSchedule.schedule = "12AB";
+        expect(Order.validateFieldsReserve(alphanumericSchedule)).toBe(false);
+
+        const symbolsSchedule = JSON.parse(JSON.stringify(valid));
+        symbolsSchedule.schedule = "12;";
+        expect(Order.validateFieldsReserve(symbolsSchedule)).toBe(false);
+    });
+
+    it('should be invalid - bad seats', () => {
+        const noSeats = JSON.parse(JSON.stringify(valid));
+        delete noSeats.seats;
+        expect(Order.validateFieldsReserve(noSeats)).toBe(false);
+
+        const symbolSeats = JSON.parse(JSON.stringify(valid));
+        symbolSeats.schedule = "A1;";
+        expect(Order.validateFieldsReserve(symbolSeats)).toBe(false);
+    });
+});
+
+describe("Order - confirm & cancel validation", () => {
+    const valid = { id: 1 };
+
+    it('should be valid', () => {
+        expect(Order.validateFieldsConfirmCancel(valid)).toBe(true);
+    });
+
+    it('should be invalid - bad id', () => {
+        const noId = JSON.parse(JSON.stringify(valid));
+        delete noId.id;
+        expect(Order.validateFieldsConfirmCancel(noId)).toBe(false);
+
+        const alphabeticalId = JSON.parse(JSON.stringify(valid));
+        alphabeticalId.id = "ABC"
+        expect(Order.validateFieldsConfirmCancel(alphabeticalId)).toBe(false);
+
+        const alphanumericalId = JSON.parse(JSON.stringify(valid));
+        alphanumericalId.id = "22A"
+        expect(Order.validateFieldsConfirmCancel(alphanumericalId)).toBe(false);
+
+        const symbolsId = JSON.parse(JSON.stringify(valid));
+        symbolsId.id = "12;"
+        expect(Order.validateFieldsConfirmCancel(symbolsId)).toBe(false);
+    })
 });
