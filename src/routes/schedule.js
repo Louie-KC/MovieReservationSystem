@@ -13,6 +13,6 @@ scheduleRouter.get("/:schedule_id/seats", controller.getScheduleSeatsById);
 // Admin only
 
 scheduleRouter.get("/:location_id/:cinema_id", controller.adminGetCinemaSchedule);
-scheduleRouter.put("", controller.adminPutNewSchedule);
-scheduleRouter.post("/:schedule_id", controller.adminPostUpdateSchedule);
+scheduleRouter.post("", controller.adminPostNewSchedule);
+scheduleRouter.put("/:schedule_id", controller.adminPutUpdateSchedule);
 scheduleRouter.delete("/:schedule_id", controller.adminDeleteSchedule);

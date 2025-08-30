@@ -11,6 +11,9 @@ var schMovie1Id = null;
 var schMovie2Id = null;
 var schMovie3Id = null;
 
+const SCH_MOVIE_ADMIN_TITLE = "TEST SCH MOVIE FOR ADMIN TEST"
+var schMovieAdminId = null;
+
 const SCH_LOC_1_ADDR = "TEST SCH LOC 1";
 var schLoc1Id = null;
 
@@ -49,8 +52,8 @@ async function clearTestScheduleData() {
         INNER JOIN Reservation r ON rs.reservation_id = r.id
         INNER JOIN Schedule s ON r.schedule_id = s.id
         INNER JOIN Movie m ON s.movie_id = m.id
-        WHERE m.title IN (?, ?, ?)`,
-        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+        WHERE m.title IN (?, ?, ?, ?)`,
+        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE, SCH_MOVIE_ADMIN_TITLE]
     );
 
     await dbConnPool.execute(
@@ -58,16 +61,16 @@ async function clearTestScheduleData() {
         FROM Reservation r
         INNER JOIN Schedule s ON r.schedule_id = s.id
         INNER JOIN Movie m ON s.movie_id = m.id
-        WHERE m.title IN (?, ?, ?)`,
-        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+        WHERE m.title IN (?, ?, ?, ?)`,
+        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE, SCH_MOVIE_ADMIN_TITLE]
     );
 
     await dbConnPool.execute(
         `DELETE s
         FROM Schedule s
         INNER JOIN Movie m ON s.movie_id = m.id
-        WHERE m.title IN (?, ?, ?)`,
-        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+        WHERE m.title IN (?, ?, ?, ?)`,
+        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE, SCH_MOVIE_ADMIN_TITLE]
     );
 
     await dbConnPool.execute(
@@ -92,8 +95,8 @@ async function clearTestScheduleData() {
 
     await dbConnPool.execute(
         `DELETE FROM Movie
-        WHERE title IN (?, ?, ?)`,
-        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE]
+        WHERE title IN (?, ?, ?, ?)`,
+        [SCH_MOVIE_1_TITLE, SCH_MOVIE_2_TITLE, SCH_MOVIE_3_TITLE, SCH_MOVIE_ADMIN_TITLE]
     );
 
     await dbConnPool.execute(
@@ -121,7 +124,7 @@ beforeAll(async () => {
         [SCH_MOVIE_2_TITLE]
     );
     if (movieResult2.affectedRows !== 1) {
-        throw "Failed to insert test movie 1"
+        throw "Failed to insert test movie 2"
     }
     const [movieResult3] = await dbConnPool.execute(
         `INSERT INTO Movie (title, description, duration, available) VALUES
@@ -129,8 +132,17 @@ beforeAll(async () => {
         [SCH_MOVIE_3_TITLE]
     );
     if (movieResult3.affectedRows !== 1) {
-        throw "Failed to insert test movie 1"
+        throw "Failed to insert test movie 3"
     }
+    const [adminMovieResult] = await dbConnPool.execute(
+        `INSERT INTO Movie (title, description, duration, available) VALUES
+        (?, 'Admin schedule endpoint test', 1, true)`,
+        [SCH_MOVIE_ADMIN_TITLE]
+    );
+    if (adminMovieResult.affectedRows !== 1) {
+        throw "Failed to insert test movie admin"
+    }
+    
     
     // Test data - Location to schedule movies at
     const [locationResult] = await dbConnPool.execute(
@@ -163,6 +175,8 @@ beforeAll(async () => {
     schMovie3Id = movieResult3.insertId;
     schLoc1Cin1Id = cinemaResult1.insertId;
     schLoc1Cin2Id = cinemaResult2.insertId;
+
+    schMovieAdminId = adminMovieResult.insertId;
 
     // Test data - Seats for Location 1 Cinema 1
     for (var row = schL1C1SeatRowMin; row <= schL1C1SeatRowMax; row++) {
@@ -416,4 +430,64 @@ test("GET /schedule/{location_id}/{cinema_id}?date - Bad authorisation", async (
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `Bearer ${nonAdminJWT}`);
     expect(nonAdmin.status).toBe(401);
+});
+
+describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
+    test('Happy path - POST, PUT then DELETE', async () => {
+        const loginRes = await request(app)
+            .post('/account/login')
+            .send({
+                email: ADMIN_EMAIL,
+                password: ADMIN_PASSWORD
+            });
+        expect(loginRes.status).toBe(200);
+        const token = loginRes.body.token;
+
+        const time1Str = new Date()
+            .addDays(1)
+            .roundOutMs()
+            .toISOString()
+            .split('.')[0]
+            .replace('T', ' ');
+        const postNewScheduleRes = await request(app)
+            .post('/schedule')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                movie: schMovieAdminId,
+                location: schLoc1Id,
+                cinema: schLoc1Cin2Id,
+                time: time1Str
+            });
+        expect(postNewScheduleRes.status).toBe(201);
+        const scheduleId = postNewScheduleRes.body.id;
+
+        // TODO: Get schedule list & verify schedule item exists
+
+        const time2Str = new Date()
+            .addDays(1)
+            .addHours(1)  // TODO: May move onto next day
+            .roundOutMs()
+            .toISOString()
+            .split('.')[0]
+            .replace('T', ' ');
+        const putUpdateScheduleRes = await request(app)
+            .put(`/schedule/${scheduleId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                movie: schMovieAdminId,
+                location: schLoc1Id,
+                cinema: schLoc1Cin2Id,
+                time: time2Str
+            });
+        expect(putUpdateScheduleRes.status).toBe(200);
+
+        // TODO: Get schedule list & verify time has changed
+
+        const deleteScheduleRes = await request(app)
+            .delete(`/schedule/${scheduleId}`)
+            .set('Authorization', `Bearer ${token}`);
+        expect(deleteScheduleRes.status).toBe(200);
+
+        // TODO: Get schedule list & verify no longer available
+    });
 });

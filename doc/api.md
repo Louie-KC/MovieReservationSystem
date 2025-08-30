@@ -37,8 +37,8 @@ Admin: Movies
 Admin: Schedule
 
 * [GET    /schedule/{location_id}/{cinema_id}?date={YYYY-MM-DD}](#get-schedulelocation_idcinema_iddateyyyy-mm-dd)
-* [PUT    /schedule](#put-schedule)
-* [POST   /schedule/{schedule_id}](#post-scheduleschedule_id)
+* [POST   /schedule](#post-schedule)
+* [PUT    /schedule/{schedule_id}](#put-scheduleschedule_id)
 * [DELETE /schedule/{schedule_id}](#delete-scheduleschedule_id)
 
 Admin: Aux
@@ -489,7 +489,7 @@ Retrieve the movie schedule for a specific cinema on a date. The `date` paramete
         * Invalid location_id and cinema_id combination
         * No schedules
 
-### PUT /schedule
+### POST /schedule
 Add a new scheduled showing for a movie.
 
 * Authorisation: Bearer
@@ -504,43 +504,67 @@ Add a new scheduled showing for a movie.
   ```
 * Possible responses:
     * HTTP 201 OK: Success
+    ```json
+    {
+        id: <new schedule ID>
+    }
+    ```
     * HTTP 400 Bad Request: (See reason)
         * The new schedule overlaps with existing schedule(s).
         * Start time is in the past.
         * One or more expected fields are missing.
         * Invalid movie, location, or cinema ID.
-    * HTTP 401 Unauthorised: No permission.
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission
 
-### POST /schedule/{schedule_id}
-Update an existing schedule. Note that this will only succeed if no confirmed orders/tickets exist for the schedule. All tentative orders/tickets for the schedule are cancelled.
+### PUT /schedule/{schedule_id}
+Update an existing schedule.
 
-Note: The JSON payload should only state keys and values for the fields being updated. Non-updated fields should be excluded.
+The schedule update is blocked if any confirmed reservations/orders exist for the schedule.
+An optional `force` query paramete r(no value is required) can be specified to prevent blocking by confirmed reservations. If set, the schedule details will change regardless and users with confirmed reservations will see the new schedule.
+Tentative reservations/orders will not block the update, and will appear changed on the users end similar to enabling force and confirmed reservations.
 
 * Authorisation: Bearer
-* Example JSON payload: Update the cinema for the scheduled showing
+* Expected JSON payload:
   ```json
   {
-      "cinema id": <the new cinema id>
+      "movie": <movie id>,
+      "location": <location id>,
+      "cinema": <cinema id>,
+      "time": <start date time>
   }
   ```
 * Possible responses:
     * HTTP 200 OK: Success
-    * HTTP 400 Bad Request: One or more field names are invalid. No changes made.
-    * HTTP 401 Unauthorised: No permission.
+    * HTTP 400 Bad Request:
+        * Invalid schedule_id format.
+        * One or more field values are invalid.
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission
+    * HTTP 404 Not Found:
+        * schedule_id does not exist
+    * HTTP 409 Conflict:
+        * Confirmed reservations exist for the schedule.
 
 ### DELETE /schedule/{schedule_id}
-Delete a schedule. 
+Soft delete a schedule.
+
+Soft deletion is blocked if there are any confirmed reservations for the schedule.
+An optional `force` query parameter (no value is required) can be specified which will cancel all reservations.
 
 * Authorisation: Bearer
-    * HTTP 204 No Content: Schedule successfully deleted.
-    * HTTP 400 Bad Request: Confirmed orders/tickets exist for the schedule.
-      ```json
-      {
-          "ids": [<ticket id 1>, <ticket id 2>, ...]
-      }
-      ```
-    * HTTP 400 Bad Request: Invalid schedule ID.
-    * HTTP 401 Unauthorised: No permission.
+    * HTTP 200 Ok: Success
+    * HTTP 400 Bad Request:
+        * Invalid schedule_id format
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission
+    * HTTP 404 Not Found:
+        * schedule_id does not map to a schedule
+    * HTTP 409 Conflict:
+        * Confirmed schedule reservations exist
 
 ### POST /admin/promote-to-admin
 Upgrade an accounts role from customer to admin.

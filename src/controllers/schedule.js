@@ -87,18 +87,20 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
     res.status(200).json(cinemaSchedule);
 });
 
-// PUT /schedule
-export const adminPutNewSchedule = asyncHandler(async (req, res, next) => {
-    if (!req.body || !Schedule.validateFields(req.body)) {
-        return res.status(400).json({ reason: "Invalid body" });
-    }
-
+// POST /schedule
+export const adminPostNewSchedule = asyncHandler(async (req, res, next) => {
     // Authorisation
     const adminCheck = await Auth.tokenAdminCheck(req);
     if (adminCheck !== null) {
         return res.status(adminCheck).send();
     }
 
+    // Validation
+    if (!req.body || !Schedule.validateFields(req.body)) {
+        return res.status(400).json({ reason: "Invalid body" });
+    }
+
+    // Operation
     const schedule = new Schedule(req.body);
     const proposedTime = Date.parse(schedule.time);
     if (proposedTime < Date.now()) {
@@ -109,18 +111,72 @@ export const adminPutNewSchedule = asyncHandler(async (req, res, next) => {
     if (status.err) {
         return res.status(500).send();
     }
-    if (!status.success) {
+    if (status.schedule_id === null) {
         return res.status(400).send();
     }
-    res.status(201).send();
+    res.status(201).json({ id: status.schedule_id });
 });
 
-// POST /schedule/{schedule_id}
-export const adminPostUpdateSchedule = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: adminPostUpdateSchedule");
+// PUT /schedule/{schedule_id}
+export const adminPutUpdateSchedule = asyncHandler(async (req, res, next) => {
+    // Authorisation
+    const adminCheck = await Auth.tokenAdminCheck(req);
+    if (adminCheck !== null) {
+        return res.status(adminCheck).send();
+    }
+    
+    // Validation
+    const scheduleId = req.params.schedule_id;
+    if (!verify(scheduleId, [Check.IS_INTEGER])) {
+        return res.status(400).json({ reason: "Invalid schedule_id" });
+    }
+    const force = req.params.force !== undefined;
+    if (!req.body || !Schedule.validateFields(req.body)) {
+        return res.status(400).json({ reason: "Invalid body" });
+    }
+
+    // Operation
+    const updatedSchedule = new Schedule(req.body);
+    const result = await updatedSchedule.updateInDB(scheduleId, force);
+
+    if (result.exception) {
+        return res.status(500).send();
+    }
+    if (!result.scheduleIdExists) {
+        return res.status(404).send();
+    }
+    if (result.blockedByReservation) {
+        return res.status(409).send();
+    }
+    res.status(200).send();
 });
 
 // DELETE /schedule/{schedule_id}
 export const adminDeleteSchedule = asyncHandler(async (req, res, next) => {
-    res.send("NOT IMPLEMENTED: adminDeleteSchedule");
+    // Authorisation
+    const adminCheckRes = await Auth.tokenAdminCheck(req);
+    if (adminCheckRes !== null) {
+        return res.status(adminCheckRes).send();
+    }
+
+    // Validation
+    const scheduleId = req.params.schedule_id;
+    if (!verify(scheduleId, [Check.IS_INTEGER])) {
+        return res.status(400).json({ reason: "Invalid schedule_id format" });
+    }
+    const force = req.query.force !== undefined;
+
+    // Operation
+    const result = await Schedule.softDeleteInDb(scheduleId, force);
+
+    if (result.exception) {
+        return res.status(500).send();
+    }
+    if (!result.scheduleIdExists) {
+        return res.status(404).send();
+    }
+    if (result.blockedByReservation) {
+        return res.status(409).send();
+    }
+    res.status(200).send();
 });

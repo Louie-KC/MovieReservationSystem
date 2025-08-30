@@ -44,11 +44,11 @@ export class Schedule {
      * 
      * Save the calling Schedule object into the database as a new schedule.
      * 
-     * @returns Object { success, null }
+     * @returns Object { schedule_id, null }
      */
     async saveNewInDb() {
         const status = {
-            success: false,
+            schedule_id: null,
             err: null
         };
 
@@ -63,10 +63,178 @@ export class Schedule {
             if (result.affectedRows === 0) {
                 status.err = "DB operation failed"
             }
-            status.success = result.affectedRows === 1;
+            status.schedule_id = result.insertId;
         } catch (err) {
             logger.error(`Schedule.saveNewInDB(${JSON.stringify(this)}) : ${err}`);
             status.err = err;
+        }
+
+        return status;
+    }
+
+    /**
+     * ADMIN
+     * 
+     * Update the details of a schedule (specified by the `id`).
+     * 
+     * Unless `force` is true, the change is only commited if there are no
+     * future confirmed reservations for the specified schedule.
+     * 
+     * @param {number} id
+     * @param {boolean} force 
+     */
+    async updateInDB(id, force) {
+        const status = {
+            scheduleIdExists: false,
+            blockedByReservation: false,
+            exception: false
+        };
+
+        var conn = null;
+        try {
+            conn = await dbConnPool.getConnection();
+            await conn.beginTransaction();
+
+            const [idCheck] = await conn.execute(
+                `SELECT COUNT(id) AS 'exists'
+                FROM Schedule
+                WHERE id = ?`,
+                [id]
+            );
+            status.scheduleIdExists = idCheck[0].exists === 1;
+            if (!status.scheduleIdExists) {
+                await conn.rollback();
+                return status;  // Executes finally then returns
+            }
+
+            // Check for confirmed reservations for the schedule
+            const [confirmedResCheck] = await conn.execute(
+                `SELECT COUNT(r.id) AS 'count'
+                FROM Reservation r
+                INNER JOIN Schedule s ON r.schedule_id = s.id
+                WHERE s.id = ?
+                AND r.kind = 'confirmed'`,
+                [id]
+            );
+            if (confirmedResCheck[0].count !== 0 && !force) {
+                status.blockedByReservation = true;
+                await conn.rollback();
+                return status;
+            }
+
+            // Update schedule
+            await conn.execute(
+                `UPDATE Schedule
+                SET movie_id = ?,
+                    location_id = ?,
+                    cinema_id = ?,
+                    start_time = ?
+                WHERE id = ?`,
+                [this.movie, this.location, this.cinema, this.time, id]
+            );
+
+            await conn.commit();
+        } catch (err) {
+            logger.error(`Schedule.updateInDB(${JSON.stringify(this)},${id},${force}) : ${err}`);
+            if (conn !== null) {
+                await conn.rollback();
+            }
+            status.exception = true;
+        } finally {
+            if (conn !== null) {
+                conn.release();
+            }
+        }
+
+        return status;
+    }
+
+    /**
+     * ADMIN
+     * 
+     * Soft delete a schedule by an `id`, marking it as unavailable.
+     * 
+     * Unless `force` is true, the update is only commited if there are no
+     * confirmed reservations for the specified movie.
+     * When `force` is true, all reservations are cancelled.
+     * 
+     * @param {number} id 
+     * @param {boolean} force 
+     */
+    static async softDeleteInDb(id, force) {
+        const status = {
+            scheduleIdExists: false,
+            blockedByReservation: false,
+            exception: false
+        };
+
+        var conn = null;
+
+        try {
+            conn = await dbConnPool.getConnection();
+            await conn.beginTransaction();
+
+            conn = await dbConnPool.getConnection();
+            await conn.beginTransaction();
+
+            const [idCheck] = await conn.execute(
+                `SELECT COUNT(id) AS 'exists'
+                FROM Schedule
+                WHERE id = ?`,
+                [id]
+            );
+            status.scheduleIdExists = idCheck[0].exists === 1;
+            if (!status.scheduleIdExists) {
+                await conn.rollback();
+                return status;  // Executes finally then returns
+            }
+
+            // Check for confirmed reservations for schedule
+            const [confirmedResCheck] = await conn.execute(
+                `SELECT COUNT(r.id) AS 'count'
+                FROM Reservation r
+                INNER JOIN Schedule s ON r.schedule_id = s.id
+                WHERE s.id = ?
+                AND r.kind = 'confirmed'`,
+                [id]
+            );
+            if (confirmedResCheck[0].count !== 0) {
+                if (force) {
+                    // Cancel tentative & confirmed reservations
+                    await conn.execute(
+                        `UPDATE Reservation r
+                        INNER JOIN Schedule s ON r.schedule_id = s.id
+                        SET r.kind = 'cancelled'
+                        WHERE r.kind != 'cancelled'
+                        AND s.id = ?`,
+                        [id]
+                    );
+                } else {
+                    status.blockedByReservation = true;
+                    await conn.rollback();
+                    return status;  // Executes finally then returns
+                }
+            }
+
+            // Update schedule
+            await conn.execute(
+                `UPDATE Schedule
+                SET available = false
+                WHERE id = ?`,
+                [id]
+            );
+
+            await conn.commit();
+        } catch (err) {
+            logger.error(`Schedule.softDeleteInDb(${id},${force}) : ${err}`);
+            if (conn !== null) {
+                await conn.rollback();
+            }
+            status.exception = true;
+        } finally {
+            if (conn !== null) {
+                conn.release();
+            }
         }
 
         return status;
