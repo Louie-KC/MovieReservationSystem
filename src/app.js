@@ -4,7 +4,7 @@ import { locationRouter } from './routes/location.js';
 import { movieRouter } from './routes/movie.js';
 import { orderRouter } from './routes/order.js';
 import { scheduleRouter } from './routes/schedule.js';
-import { dbInit } from './services/database.js';
+import { dbInit, dbConnPool } from './services/database.js';
 import { checkerInitValid } from './utils/checker.js';
 import { setDateExtensions } from './utils/dateExtension.js';
 import { logger, requestLogger } from './utils/logger.js';
@@ -45,5 +45,16 @@ await dbInit();
 // Start
 const SERVER_PORT = process.env.SERVER_PORT;
 export const server = app.listen(SERVER_PORT, () => {
-    logger.info(`Movie Reservation Service listening to port ${SERVER_PORT}`);
-})
+    logger.info(`Movie Reservation Server listening to port ${SERVER_PORT}`);
+});
+
+// Server exit
+['SIGTERM', 'SIGINT'].forEach(signal => {
+    process.on(signal, async () => {
+        logger.info(`${signal} received. Closing server.`);
+        logger.debug(`Closing dbConnPool`);
+        await dbConnPool.end();
+        logger.debug(`Closing server`);
+        await server.close();
+    })
+});
