@@ -10,6 +10,10 @@ const toISODateOnly = function() {
     return this.toISOString().split('T')[0];
 }
 
+const toDateTimeStr = function() {
+    return this.toISOString().split('.')[0].replace('T', ' ');
+}
+
 const addDays = function(days) {
     this.setDate(this.getDate() + days);
     return this;
@@ -34,6 +38,7 @@ export function setDateExtensions() {
     Date.fromEpochSec            = fromEpochSec;
     Date.prototype.toEpochSec    = toEpochSec;
     Date.prototype.toISODateOnly = toISODateOnly;
+    Date.prototype.toDateTimeStr = toDateTimeStr;
     Date.prototype.addDays       = addDays;
     Date.prototype.addHours      = addHours;
     Date.prototype.addMinutes    = addMinutes;

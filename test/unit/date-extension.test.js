@@ -11,6 +11,9 @@ beforeAll(() => {
     if (Date.prototype.toISODateOnly !== undefined) {
         throw "Date.prototype.toISODateOnly is already defined";
     }
+    if (Date.prototype.toDateTimeStr !== undefined) {
+        throw "Date.prototype.toDateTimeStr is already defined";
+    }
     if (Date.prototype.addDays !== undefined) {
         throw "Date.prototype.addDays is already defined";
     }
@@ -48,6 +51,14 @@ test('toISODateOnly', () => {
     const nowDateOnly = now.toISODateOnly();
     expect(now.toISOString().startsWith(nowDateOnly)).toBe(true);
 });
+
+test('toDateTimeStr', () => {
+    const date1 = new Date("2025-08-30T00:00:00.000Z");
+    expect(date1.toDateTimeStr()).toBe("2025-08-30 00:00:00");
+
+    const date2 = new Date("1970-01-01T12:00:00.000Z");
+    expect(date2.toDateTimeStr()).toBe("1970-01-01 12:00:00");
+})
 
 test('addDays', () => {
     const noChange = new Date("2025-08-16T00:00:00.000Z");
