@@ -30,9 +30,8 @@ Admin: Accounts
 
 Admin: Movies
 
-* [PUT    /movie](#put-movie)
-* [POST   /movie/{movie_id}](#post-moviemovie_id)
-* [PATCH  /movie/{movie_id}](#patch-moviemovie_id)
+* [POST   /movie](#post-movie)
+* [PUT    /movie/{movie_id}](#put-moviemovie_id)
 * [DELETE /movie/{movie_id}](#delete-moviemovie_id)
 
 Admin: Schedule
@@ -127,7 +126,7 @@ Retrieve a list of all locations.
       ```
 
 ### GET /movie?genre={genre}
-Retrieve a list of all movies matching the provided `genre` (if specified)
+Retrieve a list of all available movies matching the provided `genre` (if specified). Movies marked as unavailable will not be returned.
 
 * Authentication: None
 * Response:
@@ -146,7 +145,9 @@ Retrieve a list of all movies matching the provided `genre` (if specified)
       ```
 
 ### GET /movie/{movie_id}
-Retrieve information about a movie.
+Retrieve information about a movie. 
+
+Information about movies that have been marked as unavailable is still accessible by this route when the ID is known (e.g. from a users reservation/order history).
 
 * Authentication: None
 * Response
@@ -387,8 +388,8 @@ Retrieve account IDs that partially match the `name` and/or `email` parts. At le
         * Missing or invalid JWT
         * No permission
 
-### PUT /movie
-Add a new movie.
+### POST /movie
+Record a new movie.
 
 * Authentication: Bearer
 * Expected JSON payload:
@@ -402,64 +403,63 @@ Add a new movie.
   }
   ```
 * Possible responses:
-    * HTTP 201 Created
+    * HTTP 201 Created:
+    ```json
+    {
+        "id": <created movie id>
+    }
+    ```
     * HTTP 400 Bad Request:
-        * Invalid body format
-        * Invalid genre value(s)
-    * HTTP 401 Unauthorized:
+        * Missing fields in request body
+        * Invalid field value(s) in request body
+    * HTTP 401 Unauthorized
         * Missing or invalid JWT
         * No permission
 
-### POST /movie/{movie_id}
-Update movie detail(s).
-
-Note: The JSON payload should only state keys and values for the fields being updated. Non-updated fields should be excluded.
+### PUT /movie/{movie_id}
+Update movie details.
 
 * Authentication: Bearer
-* Example JSON payload: Update the description of a movie
+* Expected JSON payload:
   ```json
   {
-      "description": <The new movie description>
+      "title": <movie title>,
+      "description": <movie description>,
+      "duration": <movie duration in minutes>,
+      "poster": <TODO: Movie poster>,
+      "genres": [ <Genre 1>, <Genre 2>, ... ]
   }
   ```
 * Possible responses:
-    * HTTP 200 OK: Success
-    * HTTP 400 Bad Request: One or more field names are invalid. No changes made.
-    * HTTP 401 Unauthorised: No permission.
-
-### PATCH /movie/{movie_id}
-Toggle between making a movie available and unavailable.
-
-Side effect: Marks all future schedules with no confirmed orders/tickets for the movie as (un)available. All schedules with confirmed orders/tickets will remain, and have their IDs returned.
-
-Side effect: When marking as unavailable making all tentative/reservation orders/tickets are cancelled.
-
-* Authentication: Bearer
-* Possible responses:
-    * HTTP 200 OK: Some schedules for the movie cannot be made unavailable.
-      ```json
-      {
-          "schedule ids": [<schedule id 1>, <schedule id 2>, ...]
-      }
-      ```
-    * HTTP 204 No Content: The movie and its future schedules have been successfully marked as unavailable.
-    * HTTP 400 Bad Request: Invalid movie ID.
-    * HTTP 401 Unauthorised: No permission.
+    * HTTP 200 Ok: Success
+    * HTTP 400 Bad Request:
+        * Invalid movie_id format
+        * Missing fields in request body
+        * Invalid field value(s) in request body
+    * HTTP 401 Unauthorized
+        * Missing or invalid JWT
+        * No permission
+    * HTTP 404 Not Found:
+        * movie_id does not map to a movie
 
 ### DELETE /movie/{movie_id}
-Delete a movie.
+Soft delete a movie.
+
+Soft deletion is blocked if any confirmed reservations exist for a scheduling of the movie in the future.
+An optional `force` query parameter (no value is required) can be specified which will cancel all confirmed future reservations.
 
 * Authentication: Bearer
 * Possible responses:
-    * HTTP 204 No Content: Movie and its schedules were successfully deleted.
-    * HTTP 400 Bad Request: Schedules with confirmed orders/tickets exist for movie.
-      ```json
-      {
-          "schedule ids": [<schedule id 1>, <schedule id 2>, ...]
-      }
-      ```
-    * HTTP 400 Bad Request: Invalid movie ID.
-    * HTTP 401 Unauthorised: No permission.
+    * HTTP 200 Ok: Success
+    * HTTP 400 Bad Request:
+        * Invalid movie_id format
+    * HTTP 401 Unauthorised:
+        * Missing or invalid JWT
+        * No permission
+    * HTTP 404 Not Found:
+        * movie_id does not map to a movie
+    * HTTP 409 Conflict:
+        * Confirmed schedule reservations exist.
 
 ### GET /schedule/{location_id}/{cinema_id}?date={YYYY-MM-DD}
 Retrieve the movie schedule for a specific cinema on a date. The `date` parameter must be specified.

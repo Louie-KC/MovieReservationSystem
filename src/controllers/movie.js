@@ -6,12 +6,14 @@ import { Movie } from '../models/movie.js';
 
 // GET /movie?genre={genre}
 export const getMovieQuery = asyncHandler(async (req, res, next) => {
+    // Validation
     const { genre } = req.query;
 
     if (genre && !verify(genre, [Check.IS_ALPHABETICAL, Check.NO_SEMICOLON])) {
         return res.status(400).json({reason: "Invalid genre value"});
     }
     
+    // Operation
     const movies = genre
         ? await Movie.findByGenre(genre)
         : await Movie.findAll();
@@ -25,6 +27,7 @@ export const getMovieQuery = asyncHandler(async (req, res, next) => {
 
 // GET /movie/{movie_id}
 export const getMovieById = asyncHandler(async (req, res, next) => {
+    // Validation
     const movieId = req.params.movie_id;
 
     if (!verify(movieId, [Check.IS_INTEGER])) {
@@ -33,6 +36,7 @@ export const getMovieById = asyncHandler(async (req, res, next) => {
 
     const movieIdNumber = +movieId;
     
+    // Operation
     const movie = await Movie.findByID(movieIdNumber);
     if (!movie) {
         return res.status(404).send();
@@ -42,17 +46,20 @@ export const getMovieById = asyncHandler(async (req, res, next) => {
     res.status(200).json(movie);
 });
 
-// PUT /movie
-export const adminPutNewMovie = asyncHandler(async (req, res, next) => {
-    if (!req.body || !Movie.validateFields(req.body)) {
-        return res.status(400).json({ reason: "Invalid body" });
-    }
-
+// POST /movie
+export const adminPostNewMovie = asyncHandler(async (req, res, next) => {
+    // Authorisation
     const adminCheckRes = await Auth.tokenAdminCheck(req);
     if (adminCheckRes !== null) {
         return res.status(adminCheckRes).send();
     }
 
+    // Validation
+    if (!req.body || !Movie.validateFields(req.body)) {
+        return res.status(400).json({ reason: "Invalid body" });
+    }
+
+    // Operation
     const movie = new Movie(req.body);
     const result = await movie.saveNewInDb();
 
@@ -63,21 +70,69 @@ export const adminPutNewMovie = asyncHandler(async (req, res, next) => {
     if (result.fail.length > 0) {
         res.status(400).json({ reason: `invalid genre(s): ${result.fail}` });
     } else {
-        res.status(201).send();
+        res.status(201).json({ id: result.movie_id });
     }
 });
 
-// POST /movie/{movie_id}
-export const adminPostUpdateMovie = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: adminPostUpdateMovie. id ${req.params.movie_id}`);
-});
+// PUT /movie/{movie_id}
+export const adminPutUpdateMovie = asyncHandler(async (req, res, next) => {
+    // Authorisation
+    const adminCheckRes = await Auth.tokenAdminCheck(req);
+    if (adminCheckRes !== null) {
+        return res.status(adminCheckRes).send();
+    }
 
-// PATCH /movie/{movie_id}
-export const adminPatchMovieAvailability = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: adminPatchMovieAvailability. id ${req.params.movie_id}`);
-})
+    // Validation
+    const movieId = req.params.movie_id;
+    if (!verify(movieId, [Check.IS_INTEGER])) {
+        return res.status(400).json({ reason: "Invalid movie_id format" });
+    }
+    if (!req.body || !Movie.validateFields(req.body)) {
+        return res.status(400).json({ reason: "Invalid body" });
+    }
+
+    // Operation
+    const updatedMovie = new Movie(req.body);
+    const result = await updatedMovie.updateInDb(movieId);
+
+    if (result.exception) {
+        return res.status(500).send();
+    }
+    if (!result.movieIdExists) {
+        return res.status(404).send();
+    }
+    if (result.failedGenres.length > 0) {
+        return res.status(400).json({ reason: `invalid genre(s): ${result.failedGenres}`});
+    }
+    res.status(200).send();
+});
 
 // DELETE /movie/{movie_id}
 export const adminDeleteMovieById = asyncHandler(async (req, res, next) => {
-    res.send(`NOT IMPLEMENTED: adminDeleteMovieById. id ${req.params.movie_id}`);
-})
+    // Authorisation
+    const adminCheckRes = await Auth.tokenAdminCheck(req);
+    if (adminCheckRes !== null) {
+        return res.status(adminCheckRes).send();
+    }
+
+    // Validation
+    const movieId = req.params.movie_id;
+    if (!verify(movieId, [Check.IS_INTEGER])) {
+        return res.status(400).json({ reason: "Invalid movie_id format" });
+    }
+    const force = (req.params.force !== undefined);
+
+    // Operation
+    const result = await Movie.softDeleteInDb(movieId, force);
+    
+    if (result.exception) {
+        return res.status(500).send();
+    }
+    if (!result.movieIdExists) {
+        return res.status(404).send();
+    }
+    if (result.blockedByReservation) {
+        return res.status(409).send();
+    }
+    res.status(200).send();
+});

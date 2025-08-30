@@ -11,7 +11,7 @@ movieRouter.get("/:movie_id", controller.getMovieById);
 
 // Admin only
 
-movieRouter.put("", controller.adminPutNewMovie);
-movieRouter.post(":movie_id", controller.adminPostUpdateMovie);
-movieRouter.patch(":movie_id", controller.adminPatchMovieAvailability);
-movieRouter.delete(":movie_id", controller.adminDeleteMovieById);
+movieRouter.post("", controller.adminPostNewMovie);
+movieRouter.put("/:movie_id", controller.adminPutUpdateMovie);
+// movieRouter.patch(":movie_id", controller.adminPatchMovieAvailability);
+movieRouter.delete("/:movie_id", controller.adminDeleteMovieById);
