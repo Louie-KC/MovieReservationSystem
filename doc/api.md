@@ -446,7 +446,7 @@ Update movie details.
 Soft delete a movie.
 
 Soft deletion is blocked if any confirmed reservations exist for a scheduling of the movie in the future.
-An optional `force` query parameter (no value is required) can be specified which will cancel all confirmed future reservations.
+An optional `force` query parameter (no value is required) can be specified which will cancel all confirmed future reservations. All tentative reservations are cancelled (regardless of `force`).
 
 * Authentication: Bearer
 * Possible responses:

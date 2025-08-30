@@ -120,7 +120,7 @@ export const adminDeleteMovieById = asyncHandler(async (req, res, next) => {
     if (!verify(movieId, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: "Invalid movie_id format" });
     }
-    const force = (req.params.force !== undefined);
+    const force = req.query.force !== undefined;
 
     // Operation
     const result = await Movie.softDeleteInDb(movieId, force);

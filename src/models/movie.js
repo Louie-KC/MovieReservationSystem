@@ -258,21 +258,20 @@ export class Movie {
                 INNER JOIN Movie m ON s.movie_id = m.id
                 WHERE r.kind = 'confirmed'
                 AND m.id = ?
-                AND s.start_time > NOW()
-                AND ?`,
-                [id, force]
+                AND s.start_time > NOW()`,
+                [id]
             );
             if (futureResCheck[0].res !== 0) {
+                logger.debug(force);
                 if (force) {
-                    // Clear/cancel
+                    // Clear/cancel tentative & confirmed reservations
                     await conn.execute(
-                        `UPDATE r
-                        SET kind = 'cancelled'
-                        FROM Reservation r
+                        `UPDATE Reservation r
                         INNER JOIN Schedule s ON r.schedule_id = s.id
                         INNER JOIN Movie m ON s.movie_id = m.id
+                        SET r.kind = 'cancelled'
                         WHERE r.kind != 'cancelled'
-                        AND m.id = ?,
+                        AND m.id = ?
                         AND s.start_time > NOW()`,
                         [id]
                     );
