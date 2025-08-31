@@ -323,7 +323,84 @@ afterAll(async () => {
     server.close();
 });
 
-test("GET /schedule/{schedule_id} - Happy path", async () => {
+describe("GET /schedule?location&date", () => {
+    test("Specified date", async () => {
+        const today = new Date().roundOutMs().toISODateOnly();
+        const tomorrow = new Date().addDays(1).toISODateOnly();
+        const epochStart = "1970-01-01";
+
+        // sch1 : current time
+        // sch2 : current time + 1 hr
+        // sch3 : tomorrow
+        // sch4 : current time
+        // sch5 : current time + 1 hr
+
+        const todayRes = await request(app)
+            .get(`/schedule?location=${schLoc1Id}&date=${today}`)
+            .send();
+        expect(todayRes.status).toBe(200);
+        expect(Array.isArray(todayRes.body)).toBe(true);
+        expect(todayRes.body.some(schd => schd.id === sch1Id)).toBe(true);  // now
+        expect(todayRes.body.some(schd => schd.id === sch3Id)).toBe(false); // tomorrow
+        expect(todayRes.body.some(schd => schd.id === sch4Id)).toBe(true);  // now
+
+        const tomorrowRes = await request(app)
+            .get(`/schedule?location=${schLoc1Id}&date=${tomorrow}`)
+            .send();
+        expect(tomorrowRes.status).toBe(200);
+        expect(Array.isArray(tomorrowRes.body)).toBe(true);
+        expect(tomorrowRes.body.some(schd => schd.id === sch1Id)).toBe(false);
+        expect(tomorrowRes.body.some(schd => schd.id === sch3Id)).toBe(true);
+        expect(tomorrowRes.body.some(schd => schd.id === sch4Id)).toBe(false);
+
+        const epochRes = await request(app)
+            .get(`/schedule?location=${schLoc1Id}&date=${epochStart}`)
+            .send();
+        expect(epochRes.status).toBe(200);
+        expect(Array.isArray(epochRes.body)).toBe(true);
+        expect(epochRes.body.some(schd => schd.id === sch1Id)).toBe(false);
+        expect(epochRes.body.some(schd => schd.id === sch2Id)).toBe(false);
+        expect(epochRes.body.some(schd => schd.id === sch3Id)).toBe(false);
+        expect(epochRes.body.some(schd => schd.id === sch4Id)).toBe(false);
+        expect(epochRes.body.some(schd => schd.id === sch5Id)).toBe(false);
+    });
+
+    test("Unspecified date assumes today/the current date", async () => {
+        const today = new Date().roundOutMs().toISODateOnly();
+        const specifiedRes = await request(app)
+            .get(`/schedule?location=${schLoc1Id}&date=${today}`)
+            .send();
+        
+        const unspecifiedRes = await request(app)
+            .get(`/schedule?location=${schLoc1Id}`)
+            .send();
+
+        expect(specifiedRes.status).toBe(200);
+        expect(unspecifiedRes.status).toBe(200);
+        expect(unspecifiedRes.body).toEqual(specifiedRes.body);
+    });
+
+    test("Invalid query params", async () => {
+        const noParams = await request(app).get(`/schedule`).send();
+        expect(noParams.status).toBe(400);
+
+        const noLocation = await request(app).get(`/schedule?date=2025-08-31`).send();
+        expect(noLocation.status).toBe(400);
+
+        const badLocation = await request(app).get(`/schedule?location=1bc4`).send();
+        expect(badLocation.status).toBe(400);
+
+        const badDate1 = await request(app).get(`/schedule?location=${schLoc1Id}&date=2025-08`);
+        expect(badDate1.status).toBe(400);
+
+        const badDate2 = await request(app).get(`/schedule?location=${schLoc1Id}&date=25-08-31`);
+        expect(badDate2.status).toBe(400);
+
+        const badDate3 = await request(app).get(`/schedule?location=${schLoc1Id}&date=ab;cd`);
+        expect(badDate3.status).toBe(400);
+    });
+});
+
     const res = await request(app).get(`/schedule/${sch1Id}`).send();
     expect(res.status).toBe(200);
     expect(res.body).toEqual({

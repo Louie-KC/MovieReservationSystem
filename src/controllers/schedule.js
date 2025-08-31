@@ -3,11 +3,34 @@ import { Check, verify } from '../utils/checker.js';
 import * as Auth  from '../services/auth.js';
 import { Schedule } from '../models/schedule.js';
 
-// GET /schedule?location={location id}&date={YYYY-MM-DD}
+// GET /schedule?location={location_id}&date={YYYY-MM-DD}
 export const getScheduleQuery = asyncHandler(async (req, res, next) => {
-    const { location, date } = req.query;
-    res.send(`NOT IMPLEMENTED: getScheduleQuery. location ${location}, date ${date}`);
-})
+    // Validation
+    const locationId = req.query.location;
+    var date = null;
+
+    if (!verify(locationId, [Check.IS_INTEGER])) {
+        console.log(locationId);
+        return res.status(400).json({ reason: "Invalid location_id" });
+    }
+    if (req.query.date !== undefined) {
+        // Check specified date
+        if (!verify(req.query.date, [Check.IS_DATE])) {
+            return res.status(400).json({ reason: "Invalid date" });
+        }
+        date = req.query.date;
+    } else {
+        // Assume current date
+        date = new Date().roundOutMs().toISODateOnly();
+    }
+
+    // Operation
+    const schedules = await Schedule.findAvailableByLocationDate(locationId, date);
+    if (schedules === null) {
+        return res.status(500).send();
+    }
+    res.status(200).json(schedules)
+});
 
 // GET /schedule/{schedule_id}
 export const getScheduleById = asyncHandler(async (req, res, next) => {

@@ -12,7 +12,7 @@ Locations, cinemas, movies and schedules
 * [GET /location](#get-location)
 * [GET /movie?genre={genre}](#get-moviegenregenre)
 * [GET /movie/{movie_id}](#get-moviemovie_id)
-* [GET /schedule?location={location_id}?&date={YYYY-MM-DD}](#get-schedulelocation_idcinema_iddateyyyy-mm-dd)
+* [GET /schedule?location={location_id}?&date={YYYY-MM-DD}](#get-schedulelocationlocation_iddateyyyy-mm-dd)
 * [GET /schedule/{schedule_id}](#get-scheduleschedule_id)
 * [GET /schedule/{schedule_id}/seats](#get-scheduleschedule_idseats)
 
@@ -170,7 +170,7 @@ Information about movies that have been marked as unavailable is still accessibl
     * HTTP 404 Not Found:
         * Invalid movie_id.
 
-### GET /schedule/{location_id}/{cinema_id}?&date={YYYY-MM-DD}
+### GET /schedule?location={location_id}&date={YYYY-MM-DD}
 Retrieve the schedules for specific location cinema.
 
 The `location` parameter must be specified to get a result.
@@ -179,26 +179,16 @@ If the `date` parameter is not specified, the current date is assumed.
 * Authentication: None
 * Response:
     * HTTP 200 OK: Success
-      ```json
-      [
-          {
-              "id": <movie id>,
-              "title": <movie title>,
-              "description": <movie description>,
-              "duration": <movie duration in minutes>,
-              "poster": <TODO: Movie poster>,
-              "schedule": [
-                  {
-                  "id": <schedule id>,
-                  "time": <schedule start time>,
-                  "seats": <number of seats remaining>
-                  },
-                  ...
-              ]
-          },
-          ...
-      ]
-      ```
+        ```json
+        [
+            {
+                "id": <schedule ID>,
+                "time": <start time>,
+                "movie": <movie ID>
+            },
+            ...
+        ]
+        ```
     * HTTP 400 Bad Request:
         * Invalid location_id format
         * Invalid cinema_id format

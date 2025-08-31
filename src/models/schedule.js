@@ -243,6 +243,33 @@ export class Schedule {
     // Read operations
 
     /**
+     * Find all available schedules for a given `locationId` and `date`.
+     * 
+     * @param {number} locationId 
+     * @param {string} date in YYYY-MM-DD format
+     */
+    static async findAvailableByLocationDate(locationId, date) {
+        try {
+            const [rows, _] = await dbConnPool.execute(
+                `SELECT
+                    id AS 'id',
+                    start_time AS 'time',
+                    movie_id AS 'movie'
+                FROM Schedule
+                WHERE location_id = ?
+                AND DATE(start_time) = ?
+                AND available = true
+                ORDER BY start_time`,
+                [locationId, date]
+            );
+            return rows;
+        } catch (err) {
+            logger.error(`Schedule.findByLocationDate(${locationId},${date}) : ${err}`);
+            return null;
+        }
+    }
+
+    /**
      * Retrieve the high level overview of the schedule. This involves the location
      * address, cinema name, movie title, and schedule start time.
      * 
