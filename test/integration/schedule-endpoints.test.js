@@ -401,25 +401,28 @@ describe("GET /schedule?location&date", () => {
     });
 });
 
-    const res = await request(app).get(`/schedule/${sch1Id}`).send();
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-        address: SCH_LOC_1_ADDR,
-        cinema: SCH_LOC_1_CINEMA_1_NAME,
-        title: SCH_MOVIE_1_TITLE,
-        "TODO: poster": "TODO: poster",
-        time: sch1Time.toISOString()
+describe("GET /schedule/{schedule_id}", () => {
+    test("Happy path", async () => {
+        const res = await request(app).get(`/schedule/${sch1Id}`).send();
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({
+            address: SCH_LOC_1_ADDR,
+            cinema: SCH_LOC_1_CINEMA_1_NAME,
+            title: SCH_MOVIE_1_TITLE,
+            "TODO: poster": "TODO: poster",
+            time: sch1Time.toISOString()
+        });
     });
-});
-
-test("GET /schedule/{schedule_id} - No schedule with schedule_id", async () => {
-    const res = await request(app).get(`/schedule/0`).send();
-    expect(res.status).toBe(404);
-});
-
-test("GET /schedule/{schedule_id} - Invalid schedule_id format", async () => {
-    const res = await request(app).get(`/schedule/abc`).send();
-    expect(res.status).toBe(400);
+    
+    test("No schedule with schedule_id", async () => {
+        const res = await request(app).get(`/schedule/0`).send();
+        expect(res.status).toBe(404);
+    });
+    
+    test("Invalid schedule_id format", async () => {
+        const res = await request(app).get(`/schedule/abc`).send();
+        expect(res.status).toBe(400);
+    });
 });
 
 test("GET /schedule/{schedule_id}/seats", async () => {
@@ -435,78 +438,80 @@ test("GET /schedule/{schedule_id}/seats", async () => {
     expect(seatA3).toEqual({ seat: "A3", available: true });
 });
 
-test("GET /schedule/{location_id}/{cinema_id}?date - Happy path", async () => {
-    // login
-    const loginRes = await request(app).post('/account/login').send({
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD
-    });
-    expect(loginRes.status).toBe(200);
-    const adminJWT = loginRes.body.token;
-
-    // Loc 1 Cinema 1
-    const today = new Date().toISODateOnly();
-    const todaySchedules = await request(app)
+describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
+    test("Happy path", async () => {
+        // login
+        const loginRes = await request(app).post('/account/login').send({
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD
+        });
+        expect(loginRes.status).toBe(200);
+        const adminJWT = loginRes.body.token;
+        
+        // Loc 1 Cinema 1
+        const today = new Date().toISODateOnly();
+        const todaySchedules = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `Bearer ${adminJWT}`);
-    expect(todaySchedules.status).toBe(200);
-    expect(todaySchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(2);
-
-    const tomorrow = new Date().addDays(1).toISODateOnly();
-    const tomorrowSchedules = await request(app)
+        expect(todaySchedules.status).toBe(200);
+        expect(todaySchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(2);
+        
+        const tomorrow = new Date().addDays(1).toISODateOnly();
+        const tomorrowSchedules = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${tomorrow}`)
         .set('Authorization', `Bearer ${adminJWT}`);
-    
-    expect(tomorrowSchedules.status).toBe(200);
-    expect(tomorrowSchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(1);
-    expect(tomorrowSchedules.body.find(sch => sch.title === SCH_MOVIE_1_TITLE).id).toBe(sch3Id);
-
-    // Loc 1 Cinema 2
-    const cin2 = await request(app)
+        
+        expect(tomorrowSchedules.status).toBe(200);
+        expect(tomorrowSchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(1);
+        expect(tomorrowSchedules.body.find(sch => sch.title === SCH_MOVIE_1_TITLE).id).toBe(sch3Id);
+        
+        // Loc 1 Cinema 2
+        const cin2 = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin2Id}?date=${today}`)
         .set('Authorization', `Bearer ${adminJWT}`);
-    expect(cin2.status).toBe(200);
-    expect(cin2.body.find(sch => sch.title === SCH_MOVIE_2_TITLE).id).toBe(sch4Id);
-    expect(cin2.body.find(sch => sch.title === SCH_MOVIE_3_TITLE).id).toBe(sch5Id);
-});
-
-
-test("GET /schedule/{location_id}/{cinema_id}?date - Bad authorisation", async () => {
-    const adminLoginRes = await request(app).post('/account/login').send({
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD
+        expect(cin2.status).toBe(200);
+        expect(cin2.body.find(sch => sch.title === SCH_MOVIE_2_TITLE).id).toBe(sch4Id);
+        expect(cin2.body.find(sch => sch.title === SCH_MOVIE_3_TITLE).id).toBe(sch5Id);
     });
-    expect(adminLoginRes.status).toBe(200);
-    const adminJWT = adminLoginRes.body.token;
-
-    const nonAdminLoginRes = await request(app).post('/account/login').send({
-        email: NON_ADMIN_EMAIL,
-        password: NON_ADMIN_PASSWORD
-    });
-    expect(nonAdminLoginRes.status).toBe(200);
-    const nonAdminJWT = nonAdminLoginRes.body.token;
-
-    const today = new Date().toISODateOnly();
-
-    const noAuth = await request(app)
+    
+    
+    test("Bad authorisation", async () => {
+        const adminLoginRes = await request(app).post('/account/login').send({
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD
+        });
+        expect(adminLoginRes.status).toBe(200);
+        const adminJWT = adminLoginRes.body.token;
+        
+        const nonAdminLoginRes = await request(app).post('/account/login').send({
+            email: NON_ADMIN_EMAIL,
+            password: NON_ADMIN_PASSWORD
+        });
+        expect(nonAdminLoginRes.status).toBe(200);
+        const nonAdminJWT = nonAdminLoginRes.body.token;
+        
+        const today = new Date().toISODateOnly();
+        
+        const noAuth = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`);
-    expect(noAuth.status).toBe(400);
-
-    const missingBearerPrefix = await request(app)
+        expect(noAuth.status).toBe(400);
+        
+        const missingBearerPrefix = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `${adminJWT}`);
-    expect(missingBearerPrefix.status).toBe(400);
-    
-    const madeUpJwt = jwt.sign({ userId: 0, email: "abcd@email.com"}, "TestSecret", { expiresIn: "1m"});
-    const madeUpJwtAuth = await request(app)
+        expect(missingBearerPrefix.status).toBe(400);
+        
+        const madeUpJwt = jwt.sign({ userId: 0, email: "abcd@email.com"}, "TestSecret", { expiresIn: "1m"});
+        const madeUpJwtAuth = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `Bearer ${madeUpJwt}`);
-    expect(madeUpJwtAuth.status).toBe(401);
+        expect(madeUpJwtAuth.status).toBe(401);
         
-    const nonAdmin = await request(app)
+        const nonAdmin = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `Bearer ${nonAdminJWT}`);
-    expect(nonAdmin.status).toBe(401);
+        expect(nonAdmin.status).toBe(401);
+    });
 });
 
 describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
