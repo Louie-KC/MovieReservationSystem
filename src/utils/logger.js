@@ -19,6 +19,12 @@ export const logger = winston.createLogger({
     transports: [new winston.transports.Console()]
 });
 
+/**
+ * Express middleware.
+ * 
+ * Logs information about request-response pairs received & handled by the
+ * express server.
+ */
 export function requestLogger(req, res, next) {
     const start = Date.now();
     
@@ -31,4 +37,4 @@ export function requestLogger(req, res, next) {
     });
 
     next();
-}
+};

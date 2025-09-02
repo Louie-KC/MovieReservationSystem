@@ -73,6 +73,13 @@ export const Check = Object.freeze({
     IS_DATETIME:            checkFns.indexOf(isDateTime)
 });
 
+/**
+ * Verify a `value` satisfies a series of `checks`.
+ * 
+ * @param {*} value 
+ * @param {[Check]} checks 
+ * @returns {boolean} true if `value` satisfies all `checks`. False otherwise.
+ */
 export const verify = (value, checks) => {
     return value !== undefined
         && value !== null
