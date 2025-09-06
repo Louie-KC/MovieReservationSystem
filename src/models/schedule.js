@@ -279,18 +279,26 @@ export class Schedule {
     static async findById(id) {
         try {
             const [rows, _] = await dbConnPool.execute(
-                "SELECT l.address, c.friendly_name as 'cinema', m.title, 'TODO: poster', s.start_time as 'time'\
-                FROM Schedule s\
-                INNER JOIN Cinema c ON s.location_id = c.location_id AND s.cinema_id = c.id\
-                INNER JOIN Location l ON c.location_id = l.id\
-                INNER JOIN Movie m ON s.movie_id = m.id\
-                WHERE s.id = ?\
-                LIMIT 1;",
+                `SELECT
+                    l.address AS 'address',
+                    c.friendly_name AS 'cinema',
+                    m.title AS 'title',
+                    'TODO: poster' AS 'poster',
+                    s.start_time AS 'time',
+                    s.available AS 'available'
+                FROM Schedule s
+                INNER JOIN Cinema c ON s.location_id = c.location_id AND s.cinema_id = c.id
+                INNER JOIN Location l ON c.location_id = l.id
+                INNER JOIN Movie m ON s.movie_id = m.id
+                WHERE s.id = ?
+                LIMIT 1;`,
                 [id]
             );
             if (rows.length === 0) {
                 return "No result";
             }
+            // Convert MySQL boolean (tinyint) to bool
+            rows[0].available = rows[0].available === 1;
             return rows[0];
         } catch (err) {
             logger.error(`Schedule.findById(${id}): ${err}`);

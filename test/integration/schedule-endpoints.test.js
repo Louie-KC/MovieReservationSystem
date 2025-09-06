@@ -424,8 +424,9 @@ describe("GET /schedule/{schedule_id}", () => {
             address: SCH_LOC_1_ADDR,
             cinema: SCH_LOC_1_CINEMA_1_NAME,
             title: SCH_MOVIE_1_TITLE,
-            "TODO: poster": "TODO: poster",
-            time: sch1Time.toISOString()
+            poster: "TODO: poster",
+            time: sch1Time.toISOString(),
+            available: true
         });
     });
     
@@ -600,5 +601,12 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
         expect(Array.isArray(check3.body)).toBe(true);
         expect(check3.body.some(schd => schd.movie === schMovieAdminId1)).toBe(false);
         expect(check3.body.some(schd => schd.movie === schMovieAdminId2)).toBe(false);
+
+        // Ensure soft deleted/now unavailable info can still be retrieved by ID
+        const check4 = await request(app)
+            .get(`/schedule/${scheduleId}`)
+            .send();
+        expect(check4.status).toBe(200);
+        expect(check4.body.available).toBe(false);
     });
 });

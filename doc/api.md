@@ -210,7 +210,7 @@ Retrieve information about a schedule.
           "title": <movie title>,
           "poster": <TODO: movie poster>,
           "time": <scheduled start time>,
-          "seats": <number of available seats>
+          "available": true | false
       }
       ```
     * HTTP 400 Bad Request:
