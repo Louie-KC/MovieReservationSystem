@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import request from "supertest";
+import { login } from "./util.js";
 import { dbConnPool } from "../../src/services/database";
 import { app, server } from "../../src/app.js";
 
@@ -432,12 +433,8 @@ describe("GET /schedule?location&date", () => {
 
 describe("GET /schedule/{schedule_id}", () => {
     test("Happy path - Admin", async () => {
-        const loginRes = await request(app).post('/account/login').send({
-            email: ADMIN_EMAIL,
-            password: ADMIN_PASSWORD
-        });
-        expect(loginRes.status).toBe(200);
-        const adminJWT = loginRes.body.token;
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
         
         const res = await request(app)
             .get(`/schedule/${sch1Id}`)
@@ -455,12 +452,8 @@ describe("GET /schedule/{schedule_id}", () => {
     });
     
     test("Happy path - User with confirmed reservation", async () => {
-        const loginRes = await request(app).post('/account/login').send({
-            email: NON_ADMIN_EMAIL_1,
-            password: NON_ADMIN_PASSWORD_1
-        });
-        expect(loginRes.status).toBe(200);
-        const userJWT = loginRes.body.token;
+        const userJWT = await login(NON_ADMIN_EMAIL_1, NON_ADMIN_PASSWORD_1);
+        expect(userJWT).not.toBeNull();
 
         const res = await request(app)
             .get(`/schedule/${sch1Id}`)
@@ -478,12 +471,8 @@ describe("GET /schedule/{schedule_id}", () => {
     });
 
     test("User with tentative reservation", async () => {
-        const loginRes = await request(app).post('/account/login').send({
-            email: NON_ADMIN_EMAIL_2,
-            password: NON_ADMIN_PASSWORD_2
-        });
-        expect(loginRes.status).toBe(200);
-        const userJWT = loginRes.body.token;
+        const userJWT = await login(NON_ADMIN_EMAIL_2, NON_ADMIN_PASSWORD_2);
+        expect(userJWT).not.toBeNull();
 
         const res = await request(app)
             .get(`/schedule/${sch1Id}`)
@@ -493,12 +482,8 @@ describe("GET /schedule/{schedule_id}", () => {
     });
 
     test("User without reservation", async () => {
-        const loginRes = await request(app).post('/account/login').send({
-            email: NON_ADMIN_EMAIL_2,
-            password: NON_ADMIN_PASSWORD_2
-        });
-        expect(loginRes.status).toBe(200);
-        const userJWT = loginRes.body.token;
+        const userJWT = await login(NON_ADMIN_EMAIL_2, NON_ADMIN_PASSWORD_2);
+        expect(userJWT).not.toBeNull();
 
         const res = await request(app)
             .get(`/schedule/${sch5Id}`)
@@ -515,12 +500,8 @@ describe("GET /schedule/{schedule_id}", () => {
     });
     
     test("No schedule with schedule_id", async () => {
-        const loginRes = await request(app).post('/account/login').send({
-            email: ADMIN_EMAIL,
-            password: ADMIN_PASSWORD
-        });
-        expect(loginRes.status).toBe(200);
-        const adminJWT = loginRes.body.token;
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
 
         const res = await request(app)
             .get(`/schedule/0`)
@@ -530,12 +511,8 @@ describe("GET /schedule/{schedule_id}", () => {
     });
     
     test("Invalid schedule_id format", async () => {
-        const loginRes = await request(app).post('/account/login').send({
-            email: ADMIN_EMAIL,
-            password: ADMIN_PASSWORD
-        });
-        expect(loginRes.status).toBe(200);
-        const adminJWT = loginRes.body.token;
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
 
         const res = await request(app)
             .get(`/schedule/abc`)
@@ -560,26 +537,21 @@ test("GET /schedule/{schedule_id}/seats", async () => {
 
 describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
     test("Happy path", async () => {
-        // login
-        const loginRes = await request(app).post('/account/login').send({
-            email: ADMIN_EMAIL,
-            password: ADMIN_PASSWORD
-        });
-        expect(loginRes.status).toBe(200);
-        const adminJWT = loginRes.body.token;
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
         
         // Loc 1 Cinema 1
         const today = new Date().toISODateOnly();
         const todaySchedules = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
-        .set('Authorization', `Bearer ${adminJWT}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
+            .set('Authorization', `Bearer ${adminJWT}`);
         expect(todaySchedules.status).toBe(200);
         expect(todaySchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(2);
         
         const tomorrow = new Date().addDays(1).toISODateOnly();
         const tomorrowSchedules = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${tomorrow}`)
-        .set('Authorization', `Bearer ${adminJWT}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${tomorrow}`)
+            .set('Authorization', `Bearer ${adminJWT}`);
         
         expect(tomorrowSchedules.status).toBe(200);
         expect(tomorrowSchedules.body.filter(sch => sch.title === SCH_MOVIE_1_TITLE).length).toBe(1);
@@ -587,8 +559,8 @@ describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
         
         // Loc 1 Cinema 2
         const cin2 = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin2Id}?date=${today}`)
-        .set('Authorization', `Bearer ${adminJWT}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin2Id}?date=${today}`)
+            .set('Authorization', `Bearer ${adminJWT}`);
         expect(cin2.status).toBe(200);
         expect(cin2.body.find(sch => sch.title === SCH_MOVIE_2_TITLE).id).toBe(sch4Id);
         expect(cin2.body.find(sch => sch.title === SCH_MOVIE_3_TITLE).id).toBe(sch5Id);
@@ -596,54 +568,40 @@ describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
     
     
     test("Bad authorisation", async () => {
-        const adminLoginRes = await request(app).post('/account/login').send({
-            email: ADMIN_EMAIL,
-            password: ADMIN_PASSWORD
-        });
-        expect(adminLoginRes.status).toBe(200);
-        const adminJWT = adminLoginRes.body.token;
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
         
-        const nonAdminLoginRes = await request(app).post('/account/login').send({
-            email: NON_ADMIN_EMAIL_1,
-            password: NON_ADMIN_PASSWORD_1
-        });
-        expect(nonAdminLoginRes.status).toBe(200);
-        const nonAdminJWT = nonAdminLoginRes.body.token;
-        
+        const nonAdminJWT = await login(NON_ADMIN_EMAIL_1, NON_ADMIN_PASSWORD_1);
+        expect(nonAdminJWT).not.toBeNull();
+
         const today = new Date().toISODateOnly();
         
         const noAuth = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`);
         expect(noAuth.status).toBe(401);
         
         const missingBearerPrefix = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
-        .set('Authorization', `${adminJWT}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
+            .set('Authorization', `${adminJWT}`);
         expect(missingBearerPrefix.status).toBe(401);
         
         const madeUpJwt = jwt.sign({ userId: 0, email: "abcd@email.com"}, "TestSecret", { expiresIn: "1m"});
         const madeUpJwtAuth = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
-        .set('Authorization', `Bearer ${madeUpJwt}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
+            .set('Authorization', `Bearer ${madeUpJwt}`);
         expect(madeUpJwtAuth.status).toBe(401);
         
         const nonAdmin = await request(app)
-        .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
-        .set('Authorization', `Bearer ${nonAdminJWT}`);
+            .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
+            .set('Authorization', `Bearer ${nonAdminJWT}`);
         expect(nonAdmin.status).toBe(401);
     });
 });
 
 describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
     test('Happy path - POST, PUT then DELETE', async () => {
-        const loginRes = await request(app)
-            .post('/account/login')
-            .send({
-                email: ADMIN_EMAIL,
-                password: ADMIN_PASSWORD
-            });
-        expect(loginRes.status).toBe(200);
-        const adminJWT = loginRes.body.token;
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
 
         const testTime = new Date().addDays(1).roundOutMs();
         

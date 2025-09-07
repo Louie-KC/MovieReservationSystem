@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import request from 'supertest';
+import { login } from "./util.js";
 import { dbConnPool } from '../../src/services/database.js';
 import { app, server } from '../../src/app.js';
 
@@ -234,14 +235,8 @@ describe('GET /movie/{movie_id}', () => {
 
 describe('Admin - POST, PUT, DELETE /movie endpoints', () => {
     test('Happy path - POST, PUT, then DELETE', async () => {
-        const loginRes = await request(app)
-            .post(`/account/login`)
-            .send({
-                email: ADMIN_EMAIL,
-                password: ADMIN_PASS
-            });
-        expect(loginRes.status).toBe(200);
-        const token = loginRes.body.token;
+        const token = await login(ADMIN_EMAIL, ADMIN_PASS);
+        expect(token).not.toBeNull();
     
         const postNewMovieRes = await request(app)
             .post(`/movie`)

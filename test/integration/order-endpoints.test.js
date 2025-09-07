@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import request from "supertest";
+import { login } from "./util.js";
 import { dbConnPool } from "../../src/services/database";
 import { app, server } from "../../src/app.js";
 
@@ -167,12 +168,8 @@ afterAll(async () => {
 });
 
 test("GET /order/history - No orders/reservations", async () => {
-    const loginRes = await request(app).post("/account/login").send({
-        email: USER_1_EMAIL,
-        password: USER_1_PASS
-    });
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.token;
+    const token = await login(USER_1_EMAIL, USER_1_PASS);
+    expect(token).not.toBeNull();
 
     const historyRes = await request(app).get("/order/history")
         .set("Authorization", `Bearer ${token}`)
@@ -183,12 +180,8 @@ test("GET /order/history - No orders/reservations", async () => {
 });
 
 test("POST /order/reserve - Reserve single seat (A1)", async () => {
-    const loginRes = await request(app).post("/account/login").send({
-        email: USER_2_EMAIL,
-        password: USER_2_PASS
-    });
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.token;
+    const token = await login(USER_2_EMAIL, USER_2_PASS);
+    expect(token).not.toBeNull();
 
     const reserveRes = await request(app).post("/order/reserve")
         .set("Authorization", `Bearer ${token}`)
@@ -200,12 +193,8 @@ test("POST /order/reserve - Reserve single seat (A1)", async () => {
 });
 
 test("POST /order/reserve - Reserve multiple seats (A2, A3)", async () => {
-    const loginRes = await request(app).post("/account/login").send({
-        email: USER_2_EMAIL,
-        password: USER_2_PASS
-    });
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.token;
+    const token = await login(USER_2_EMAIL, USER_2_PASS);
+    expect(token).not.toBeNull();
 
     const reserveRes = await request(app).post("/order/reserve")
         .set("Authorization", `Bearer ${token}`)
@@ -217,12 +206,8 @@ test("POST /order/reserve - Reserve multiple seats (A2, A3)", async () => {
 });
 
 test("POST /order/reserve - Invalid no seats", async () => {
-    const loginRes = await request(app).post("/account/login").send({
-        email: USER_2_EMAIL,
-        password: USER_2_PASS
-    });
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.token;
+    const token = await login(USER_2_EMAIL, USER_2_PASS);
+    expect(token).not.toBeNull();
 
     const reserveRes = await request(app).post("/order/reserve")
         .set("Authorization", `Bearer ${token}`)
@@ -235,12 +220,8 @@ test("POST /order/reserve - Invalid no seats", async () => {
 });
 
 test("POST /order/reserve - Invalid bad seat", async () => {
-    const loginRes = await request(app).post("/account/login").send({
-        email: USER_2_EMAIL,
-        password: USER_2_PASS
-    });
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.token;
+    const token = await login(USER_2_EMAIL, USER_2_PASS);
+    expect(token).not.toBeNull();
 
     const reserveRes = await request(app).post("/order/reserve")
         .set("Authorization", `Bearer ${token}`)
