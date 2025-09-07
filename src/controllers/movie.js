@@ -49,9 +49,12 @@ export const getMovieById = asyncHandler(async (req, res, next) => {
 // POST /movie
 export const adminPostNewMovie = asyncHandler(async (req, res, next) => {
     // Authorisation
-    const adminCheckRes = await Auth.tokenAdminCheck(req);
-    if (adminCheckRes !== null) {
-        return res.status(adminCheckRes).send();
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
     // Validation
@@ -77,9 +80,12 @@ export const adminPostNewMovie = asyncHandler(async (req, res, next) => {
 // PUT /movie/{movie_id}
 export const adminPutUpdateMovie = asyncHandler(async (req, res, next) => {
     // Authorisation
-    const adminCheckRes = await Auth.tokenAdminCheck(req);
-    if (adminCheckRes !== null) {
-        return res.status(adminCheckRes).send();
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
     // Validation
@@ -110,9 +116,12 @@ export const adminPutUpdateMovie = asyncHandler(async (req, res, next) => {
 // DELETE /movie/{movie_id}
 export const adminDeleteMovieById = asyncHandler(async (req, res, next) => {
     // Authorisation
-    const adminCheckRes = await Auth.tokenAdminCheck(req);
-    if (adminCheckRes !== null) {
-        return res.status(adminCheckRes).send();
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
     // Validation

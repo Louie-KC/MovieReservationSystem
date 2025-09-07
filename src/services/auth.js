@@ -21,64 +21,61 @@ export const createJWT = (userId, email) => {
 }
 
 /**
- * Verify a JWT is valid, and if so, extract the data held by the JWT.
+ * Extract and verify the JWT from a HTTP request.
  * 
- * @param {string} token 
+ * Optionally (with `checkIfAdmin`) checks if the request is made by an admin.
+ * 
+ * Returns data from the JWT (see Auth.createJWT)
+ * 
+ * @param {*} req Http Request
+ * @param {boolean} checkIfAdmin 
+ * @returns 
  */
-export const verifyExtractJWT = (token) => {
-    const status = {
+export const extractVerifyJWT = async (req, checkIfAdmin) => {
+    const result = {
         valid: false,
         userId: null,
         email: null,
+        isAdmin: false,
+        failHttpCode: null,
+        failReason: null
     };
 
-    if (token === undefined || token === null) {
-        return status;
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
-        if (!err) {
-            status.valid = verify(data.userId, [Check.IS_INTEGER])
-                        && verify(data.email, [Check.IS_EMAIL]);
-            status.userId = data.userId;
-            status.email = data.email;
-        }
-    });
-
-    return status;
-}
-
-/**
- * Utility/helper function check if a requester is an admin, performing:
- * 1. Authorization header extraction
- * 2. JWT verification
- * 3. Query if JWT userId is of an admin
- * 
- * @param {*} req a HTTP request
- * @returns null if request is from an admin, otherwise a HTTP response code.
- */
-export const tokenAdminCheck = async (req) => {
     if (req.headers['authorization'] === undefined) {
-        return 400;
+        result.failHttpCode = 401;
+        result.failReason = "Missing token";
+        return result;
     }
-    const authHeader = req.headers['authorization'];
-    if (!authHeader.startsWith("Bearer ")) {
-        return 400;
+    if (!req.headers['authorization'].startsWith('Bearer ')) {
+        result.failHttpCode = 401;
+        result.failReason = "Invalid token";
+        return result;
     }
     const token = req.headers['authorization'].split(' ')[1];
-    const jwt = verifyExtractJWT(token);
-    if (!jwt.valid) {
-        return 401;
+    jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
+        if (!err) {
+            result.valid = verify(data.userId, [Check.IS_INTEGER])
+            && verify(data.email, [Check.IS_EMAIL]);
+            result.userId = data.userId;
+            result.email = data.email;
+        }
+    });
+    if (!result.valid) {
+        result.failHttpCode = 401;
+        result.failReason = "Invalid token";
+        return result;
     }
-    const admin = await isAdmin(jwt.userId);
-    if (admin.err) {
-        return 500;
+    if (checkIfAdmin) {
+        const check = await isAdmin(result.userId);
+        if (check.err) {
+            result.valid = false;
+            result.failHttpCode = 500;
+            logger.debug(`checkIfAdmin err: ${check.err}`);
+        } else {
+            result.isAdmin = check.isAdmin;
+        }
     }
-    if (!admin.isAdmin) {
-        return 401;
-    }
-
-    return null;
+    return result;
 }
 
 /**
@@ -87,7 +84,7 @@ export const tokenAdminCheck = async (req) => {
  * @param {number} userId 
  * @returns {Object} { isAdmin, err }
  */
-export const isAdmin = async (userId) => {
+const isAdmin = async (userId) => {
     const status = {
         isAdmin: false,
         err: null

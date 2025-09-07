@@ -510,12 +510,12 @@ describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
         
         const noAuth = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`);
-        expect(noAuth.status).toBe(400);
+        expect(noAuth.status).toBe(401);
         
         const missingBearerPrefix = await request(app)
         .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
         .set('Authorization', `${adminJWT}`);
-        expect(missingBearerPrefix.status).toBe(400);
+        expect(missingBearerPrefix.status).toBe(401);
         
         const madeUpJwt = jwt.sign({ userId: 0, email: "abcd@email.com"}, "TestSecret", { expiresIn: "1m"});
         const madeUpJwtAuth = await request(app)

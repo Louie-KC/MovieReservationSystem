@@ -41,25 +41,21 @@ export const postAccountLogin = asyncHandler(async (req, res, next) => {
 })
 
 // POST /account/change-password
-export const postAccountChangePassword = asyncHandler(async (req, res, next) => {
+export const postAccountChangePassword = asyncHandler(async (req, res, next) => {    
+    const authCheck = await Auth.extractVerifyJWT(req, false);
+    if (authCheck.failHttpCode !== null) {
+        logger.debug(`change password authCheck.failHttpCode ${authCheck.failHttpCode}`);
+        return res.status(authCheck.failHttpCode).json({ reason: authCheck.failReason });
+    }
+    
     if (!req.body || !Account.validateFieldsChangePassword(req.body)) {
         return res.status(400).json({ reason: "Invalid change password body" });
     }
 
-    // Extract and check JWT token from header
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ reason: "Missing token" });
-    }
-    const token = authHeader.split(' ')[1];
-    const tokenData = Auth.verifyExtractJWT(token);
-    if (!tokenData.valid) {
-        return res.status(401).send();
-    }
-
     // Try change password
-    const result = await Account.changePassword(tokenData.userId, req.body);
+    const result = await Account.changePassword(authCheck.userId, req.body);
     if (result.err) {
+        logger.debug(`change password err: ${result.err}`);
         return res.status(500).send();
     }
     if (!result.correctOld) {
@@ -73,14 +69,18 @@ export const postAccountChangePassword = asyncHandler(async (req, res, next) => 
 
 // GET /account/{account_id}
 export const adminGetAccountById = asyncHandler(async (req, res, next) => {
+    // Auth
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
+    }
+
     const queryAccountId = req.params.account_id;
     if (!verify(queryAccountId, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: "account_id is not an integer" });
-    }
-
-    const adminCheck = await Auth.tokenAdminCheck(req);
-    if (adminCheck !== null) {
-        return res.status(adminCheck).send();
     }
     
     const result = await Account.findById(queryAccountId);
@@ -97,10 +97,19 @@ export const adminGetAccountById = asyncHandler(async (req, res, next) => {
 
 // GET /account?name={name}&email={email}
 export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
+    // Auth
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
+    }
+
+    // Input validation
     const queryName  = req.query.name  !== undefined ? req.query.name  : "";
     const queryEmail = req.query.email !== undefined ? req.query.email : "";
 
-    // Input validation
     if (queryName.length === 0 && queryEmail.length === 0) {
         return res.status(400).json({ reason: "No valid query parameters specified" });
     }
@@ -118,12 +127,6 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ reason: "Bad name query parameter" });
     }
 
-    // Auth
-    const adminCheck = await Auth.tokenAdminCheck(req);
-    if (adminCheck !== null) {
-        return res.status(adminCheck).send();
-    }
-
     // DB query
     const result = await Account.findByPartialInfo(queryName, queryEmail);
     logger.debug(result);
@@ -136,14 +139,17 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
 
 // POST /admin/account/promote-to-admin
 export const adminPromoteToAdmin = asyncHandler(async (req, res, next) => {
-    if (!req.body || !Account.validateFieldsChangeKind(req.body)) {
-        return res.status(400).json({ reason: "Invalid body" });
+    // Authorisation
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
-    // Authorisation
-    const adminCheck = await Auth.tokenAdminCheck(req);
-    if (adminCheck !== null) {
-        return res.status(adminCheck).send();
+    if (!req.body || !Account.validateFieldsChangeKind(req.body)) {
+        return res.status(400).json({ reason: "Invalid body" });
     }
 
     const status = await Account.changeKind(req.body, 'admin');

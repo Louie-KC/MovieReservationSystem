@@ -79,9 +79,13 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
     const { location_id, cinema_id } = req.params;
     const date = req.query.date;
 
-    const adminCheck = await Auth.tokenAdminCheck(req);
-    if (adminCheck !== null) {
-        return res.status(adminCheck).send();
+    // Authorisation
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
     if (!verify(location_id, [Check.IS_INTEGER])) {
@@ -113,9 +117,12 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
 // POST /schedule
 export const adminPostNewSchedule = asyncHandler(async (req, res, next) => {
     // Authorisation
-    const adminCheck = await Auth.tokenAdminCheck(req);
-    if (adminCheck !== null) {
-        return res.status(adminCheck).send();
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
     // Validation
@@ -143,9 +150,12 @@ export const adminPostNewSchedule = asyncHandler(async (req, res, next) => {
 // PUT /schedule/{schedule_id}
 export const adminPutUpdateSchedule = asyncHandler(async (req, res, next) => {
     // Authorisation
-    const adminCheck = await Auth.tokenAdminCheck(req);
-    if (adminCheck !== null) {
-        return res.status(adminCheck).send();
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
     
     // Validation
@@ -177,9 +187,12 @@ export const adminPutUpdateSchedule = asyncHandler(async (req, res, next) => {
 // DELETE /schedule/{schedule_id}
 export const adminDeleteSchedule = asyncHandler(async (req, res, next) => {
     // Authorisation
-    const adminCheckRes = await Auth.tokenAdminCheck(req);
-    if (adminCheckRes !== null) {
-        return res.status(adminCheckRes).send();
+    const adminCheck = await Auth.extractVerifyJWT(req, true);
+    if (adminCheck.failHttpCode !== null) {
+        return res.status(adminCheck.failHttpCode).send();
+    }
+    if (!adminCheck.isAdmin) {
+        return res.status(401).send();
     }
 
     // Validation

@@ -6,19 +6,14 @@ import { Order } from '../models/order.js';
 
 // GET /order/history
 export const getOrderHistory = asyncHandler(async (req, res, next) => {
-    // Extract and check JWT token from header
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ reason: "Missing token" });
-    }
-    const token = authHeader.split(' ')[1];
-    const tokenData = Auth.verifyExtractJWT(token);
-    if (!tokenData.valid) {
-        return res.status(401).send();
+    // Authorisation
+    const tokenCheck = await Auth.extractVerifyJWT(req, false);
+    if (tokenCheck.failHttpCode !== null) {
+        return res.status(tokenCheck.failHttpCode).send();
     }
 
     // Get order/reservation history
-    const history = await Order.findHistoryByUserId(tokenData.userId);
+    const history = await Order.findHistoryByUserId(tokenCheck.userId);
     if (history === null) {
         return res.status(500).send();
     } else {
@@ -28,38 +23,30 @@ export const getOrderHistory = asyncHandler(async (req, res, next) => {
 
 // POST /order/reserve
 export const postOrderReserve = asyncHandler(async (req, res, next) => {
+    // Authorisation
+    const tokenCheck = await Auth.extractVerifyJWT(req, false);
+    if (tokenCheck.failHttpCode !== null) {
+        return res.status(tokenCheck.failHttpCode).send();
+    }
     if (!req.body || !Order.validateFieldsReserve(req.body)) {
         return res.status(400).json({ reason: "Invalid reserve body" });
     }
 
-    // Extract and check JWT token from header
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ reason: "Missing token" });
-    }
-    const token = authHeader.split(' ')[1];
-    const tokenData = Auth.verifyExtractJWT(token);
-    if (!tokenData.valid) {
-        return res.status(401).send();
-    }
-
     // Ensure all seats are valid
     const seats = await Schedule.findSeatingAvailabilityById(req.body.schedule);
-    logger.debug(JSON.stringify(seats));
     const availableSet = new Set(seats.filter(seat => seat.available).map(seat => seat.seat));
     
     // Ensure all requested seats are available
     if (!req.body.seats.every(seat => availableSet.has(seat))) {
         return res.status(400).json({ reason: "Cannot reserve already reserved seats" });
     }
-
+    
     // Make reservation
-    const result = await Order.reserve(tokenData.userId, req.body);
+    const result = await Order.reserve(tokenCheck.userId, req.body);
     if (result.reservationId !== null && result.err === null) {
         return res.status(200).json({ reservation_id: result.reservationId });
     } else {
         if (result.err === "Seat already reserved") {
-            logger.debug("2");
             return res.status(400).json({ reason: "Cannot reserve already reserved seats" });
         } else {
             return res.status(500).send();
@@ -69,22 +56,17 @@ export const postOrderReserve = asyncHandler(async (req, res, next) => {
 
 // POST /order/confirm
 export const postOrderConfirm = asyncHandler(async (req, res, next) => {
+    // Authorisation
+    const tokenCheck = await Auth.extractVerifyJWT(req, false);
+    if (tokenCheck.failHttpCode !== null) {
+        return res.status(tokenCheck.failHttpCode).send();
+    }
     if (!req.body || !Order.validateFieldsConfirmCancel(req.body)) {
         return res.status(400).json({ reason: "Invalid request body" });
     }
-    // Extract and check JWT token from header
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ reason: "Missing token" });
-    }
-    const token = authHeader.split(' ')[1];
-    const tokenData = Auth.verifyExtractJWT(token);
-    if (!tokenData.valid) {
-        return res.status(401).send();
-    }
 
     // Confirm
-    const result = await Order.confirmRevervation(tokenData.userId, req.body);
+    const result = await Order.confirmRevervation(tokenCheck.userId, req.body);
     if (result.err !== null) {
         const errMsg = result.err.message;
         // Check for pre-update Reservation trigger message
@@ -103,22 +85,18 @@ export const postOrderConfirm = asyncHandler(async (req, res, next) => {
 
 // POST /order/cancel
 export const postOrderCancel = asyncHandler(async (req, res, next) => {
+    // Authorisation
+    const tokenCheck = await Auth.extractVerifyJWT(req, false);
+    if (tokenCheck.failHttpCode !== null) {
+        return res.status(tokenCheck.failHttpCode).send();
+    }
+
     if (!req.body || !Order.validateFieldsConfirmCancel(req.body)) {
         return res.status(400).json({ reason: "Invalid request body" });
     }
-    // Extract and check JWT token from header
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ reason: "Missing token" });
-    }
-    const token = authHeader.split(' ')[1];
-    const tokenData = Auth.verifyExtractJWT(token);
-    if (!tokenData.valid) {
-        return res.status(401).send();
-    }
 
     // Cancel
-    const result = await Order.cancelRevervation(tokenData.userId, req.body);
+    const result = await Order.cancelRevervation(tokenCheck.userId, req.body);
     if (result.err !== null) {
         const errMsg = result.err.message;
         // Check for pre-update Reservation trigger message
