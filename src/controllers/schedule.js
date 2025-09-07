@@ -34,22 +34,30 @@ export const getScheduleQuery = asyncHandler(async (req, res, next) => {
 
 // GET /schedule/{schedule_id}
 export const getScheduleById = asyncHandler(async (req, res, next) => {
+    // Authorisation
+    const tokenCheck = await Auth.extractVerifyJWT(req, true);
+    if (tokenCheck.failHttpCode !== null) {
+        return res.status(tokenCheck.failHttpCode).send();
+    }
+
     const scheduleId = req.params.schedule_id;
     if (!verify(scheduleId, [Check.IS_INTEGER])) {
         return res.status(400).json({ reason: "Invalid schedule id value" });
     }
 
-    const scheduleIdNumber = +scheduleId;
-
-    const schedule = await Schedule.findById(scheduleIdNumber);
+    const schedule = await Schedule.findById(+scheduleId, tokenCheck.userId);
     if (!schedule) {
         return res.status(500).send();
     }
     if (schedule === "No result") {
         return res.status(404).send();
     }
-
+    if (!tokenCheck.isAdmin && !schedule.requesterHasReservation) {
+        return res.status(403).send();
+    }
+    
     delete schedule.id;  // id known by client in request
+    delete schedule.requesterHasReservation;  // not needed by client
     res.status(200).json(schedule);
 });
 

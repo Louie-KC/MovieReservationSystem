@@ -274,9 +274,10 @@ export class Schedule {
      * address, cinema name, movie title, and schedule start time.
      * 
      * @param {number} id 
+     * @param {number} requesterUserId
      * @returns {Object}
      */
-    static async findById(id) {
+    static async findById(id, requesterUserId = 0) {
         try {
             const [rows, _] = await dbConnPool.execute(
                 `SELECT
@@ -285,20 +286,27 @@ export class Schedule {
                     m.title AS 'title',
                     'TODO: poster' AS 'poster',
                     s.start_time AS 'time',
-                    s.available AS 'available'
+                    s.available AS 'available',
+                    ? IN (
+                        SELECT r.user_id
+                        FROM Reservation r
+                        INNER JOIN Schedule s ON r.schedule_id = s.id
+                        WHERE r.kind = 'confirmed'
+                    ) AS 'requesterHasReservation'
                 FROM Schedule s
                 INNER JOIN Cinema c ON s.location_id = c.location_id AND s.cinema_id = c.id
                 INNER JOIN Location l ON c.location_id = l.id
                 INNER JOIN Movie m ON s.movie_id = m.id
                 WHERE s.id = ?
                 LIMIT 1;`,
-                [id]
+                [requesterUserId, id]
             );
             if (rows.length === 0) {
                 return "No result";
             }
             // Convert MySQL boolean (tinyint) to bool
             rows[0].available = rows[0].available === 1;
+            rows[0].requesterHasReservation = rows[0].requesterHasReservation === 1;
             return rows[0];
         } catch (err) {
             logger.error(`Schedule.findById(${id}): ${err}`);

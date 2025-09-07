@@ -200,7 +200,10 @@ If the `date` parameter is not specified, the current date is assumed.
 ### GET /schedule/{schedule_id}
 Retrieve information about a schedule.
 
-* Authentication: None
+The requesting user must have a confirmed reservation/order for the schedule or
+be an admin to retrieve a result.
+
+* Authentication: Bearer
 * Response:
     * HTTP 200 OK: Success
       ```json

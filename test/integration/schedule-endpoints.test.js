@@ -44,8 +44,10 @@ var sch5Time = null;
 const ADMIN_EMAIL = "ScheduleTestAdmin@email.com";
 const ADMIN_PASSWORD = "TestPassword1";
 
-const NON_ADMIN_EMAIL = "ScheduleTestNonAdmin@email.com";
-const NON_ADMIN_PASSWORD = "TestPassword1";
+const NON_ADMIN_EMAIL_1 = "ScheduleTestNonAdmin1@email.com";
+const NON_ADMIN_PASSWORD_1 = "TestPassword1";
+const NON_ADMIN_EMAIL_2 = "ScheduleTestNonAdmin2@email.com";
+const NON_ADMIN_PASSWORD_2 = "TestPassword2";
 
 async function clearTestScheduleData() {
     await dbConnPool.execute(
@@ -107,13 +109,46 @@ async function clearTestScheduleData() {
 
     await dbConnPool.execute(
         `DELETE FROM User
-        WHERE email_addr IN (?, ?)`,
-        [ADMIN_EMAIL, NON_ADMIN_EMAIL]
+        WHERE email_addr IN (?, ?, ?)`,
+        [ADMIN_EMAIL, NON_ADMIN_EMAIL_1, NON_ADMIN_EMAIL_2]
     );
 }
 
 beforeAll(async () => {
     await clearTestScheduleData();
+
+    // Test accounts
+    const adminPassHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+    const [testAdminResult1] = await dbConnPool.execute(
+        `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+            ('SchAdminGiven', 'SchAdminLast', ?, ?, 'admin')`,
+        [ADMIN_EMAIL, adminPassHash]
+    );
+    if (testAdminResult1.affectedRows !== 1) {
+        throw "Failed to insert test admin user";
+    }
+    
+    const user1PassHash = bcrypt.hashSync(NON_ADMIN_PASSWORD_1, 10);
+    const [testUserResult1] = await dbConnPool.execute(
+        `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+            ('SchUser1Given', 'SchUser1Last', ?, ?, 'Customer')`,
+        [NON_ADMIN_EMAIL_1, user1PassHash]
+    );
+    if (testUserResult1.affectedRows !== 1) {
+        throw "Failed to insert test non-admin user 1";
+    }
+    const testUser1Id = testUserResult1.insertId;
+    
+    const user2PassHash = bcrypt.hashSync(NON_ADMIN_PASSWORD_2, 10);
+    const [testUserResult2] = await dbConnPool.execute(
+        `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+            ('SchUser2Given', 'SchUser2Last', ?, ?, 'Customer')`,
+        [NON_ADMIN_EMAIL_2, user2PassHash]
+    );
+    if (testUserResult2.affectedRows !== 1) {
+        throw "Failed to insert test non-admin user 2";
+    }
+    const testUser2Id = testUserResult2.insertId;
         
     // Test data - Movies to be scheduled
     const [movieResult1] = await dbConnPool.execute(
@@ -264,9 +299,9 @@ beforeAll(async () => {
 
     // Test existing reservations to ensure seat availability is correct
     const [confirmedReservationInsertResult] = await dbConnPool.execute(
-        `INSERT INTO Reservation (schedule_id, kind, last_updated) VALUES
-            (?, 'confirmed', NOW())`,
-        [sch1Id]
+        `INSERT INTO Reservation (schedule_id, user_id, kind, last_updated) VALUES
+            (?, ?, 'confirmed', NOW())`,
+        [sch1Id, testUser1Id]
     );
     if (confirmedReservationInsertResult.affectedRows !== 1) {
         throw "Failed to insert confirmed reservation cin 1 loc 1 sch 1";
@@ -289,8 +324,8 @@ beforeAll(async () => {
 
     const [tentativeReservationInsertResult] = await dbConnPool.execute(
         `INSERT INTO Reservation (user_id, schedule_id, kind, last_updated) VALUES
-            (NULL, ?, 'tentative', NOW())`,
-        [sch1Id]
+            (?, ?, 'tentative', NOW())`,
+        [testUser2Id, sch1Id]
     );
     if (tentativeReservationInsertResult.affectedRows !== 1) {
         throw "Failed to insert tentative reservation cin 1 loc 1 sch 1";
@@ -309,27 +344,6 @@ beforeAll(async () => {
     );
     if (tentativeReservSeatInsertResult.affectedRows !== 1) {
         throw "Failed to insert seat for tentative reservation cin 1 loc 1 sch 1";
-    }
-
-    // Test accounts
-    const adminPassHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
-    const [testAdminResult1] = await dbConnPool.execute(
-        `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
-            ('SchAdminGiven', 'SchAdminLast', ?, ?, 'admin')`,
-        [ADMIN_EMAIL, adminPassHash]
-    );
-    if (testAdminResult1.affectedRows !== 1) {
-        throw "Failed to insert test admin user";
-    }
-    
-    const userPassHash = bcrypt.hashSync(NON_ADMIN_PASSWORD, 10);
-    const [testUserResult1] = await dbConnPool.execute(
-        `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
-            ('SchUserGiven', 'SchUserLast', ?, ?, 'Customer')`,
-        [NON_ADMIN_EMAIL, userPassHash]
-    );
-    if (testUserResult1.affectedRows !== 1) {
-        throw "Failed to insert test non-admin user";
     }
 });
 
@@ -417,8 +431,18 @@ describe("GET /schedule?location&date", () => {
 });
 
 describe("GET /schedule/{schedule_id}", () => {
-    test("Happy path", async () => {
-        const res = await request(app).get(`/schedule/${sch1Id}`).send();
+    test("Happy path - Admin", async () => {
+        const loginRes = await request(app).post('/account/login').send({
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD
+        });
+        expect(loginRes.status).toBe(200);
+        const adminJWT = loginRes.body.token;
+        
+        const res = await request(app)
+            .get(`/schedule/${sch1Id}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send();
         expect(res.status).toBe(200);
         expect(res.body).toEqual({
             address: SCH_LOC_1_ADDR,
@@ -430,13 +454,93 @@ describe("GET /schedule/{schedule_id}", () => {
         });
     });
     
+    test("Happy path - User with confirmed reservation", async () => {
+        const loginRes = await request(app).post('/account/login').send({
+            email: NON_ADMIN_EMAIL_1,
+            password: NON_ADMIN_PASSWORD_1
+        });
+        expect(loginRes.status).toBe(200);
+        const userJWT = loginRes.body.token;
+
+        const res = await request(app)
+            .get(`/schedule/${sch1Id}`)
+            .set('Authorization', `Bearer ${userJWT}`)
+            .send();
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({
+            address: SCH_LOC_1_ADDR,
+            cinema: SCH_LOC_1_CINEMA_1_NAME,
+            title: SCH_MOVIE_1_TITLE,
+            poster: "TODO: poster",
+            time: sch1Time.toISOString(),
+            available: true
+        });
+    });
+
+    test("User with tentative reservation", async () => {
+        const loginRes = await request(app).post('/account/login').send({
+            email: NON_ADMIN_EMAIL_2,
+            password: NON_ADMIN_PASSWORD_2
+        });
+        expect(loginRes.status).toBe(200);
+        const userJWT = loginRes.body.token;
+
+        const res = await request(app)
+            .get(`/schedule/${sch1Id}`)
+            .set('Authorization', `Bearer ${userJWT}`)
+            .send();
+        expect(res.status).toBe(403);
+    });
+
+    test("User without reservation", async () => {
+        const loginRes = await request(app).post('/account/login').send({
+            email: NON_ADMIN_EMAIL_2,
+            password: NON_ADMIN_PASSWORD_2
+        });
+        expect(loginRes.status).toBe(200);
+        const userJWT = loginRes.body.token;
+
+        const res = await request(app)
+            .get(`/schedule/${sch5Id}`)
+            .set('Authorization', `Bearer ${userJWT}`)
+            .send();
+        expect(res.status).toBe(403);
+    });
+
+    test("No auth", async () => {
+        const res = await request(app)
+            .get(`/schedule/${sch1Id}`)
+            .send();
+        expect(res.status).toBe(401);
+    });
+    
     test("No schedule with schedule_id", async () => {
-        const res = await request(app).get(`/schedule/0`).send();
+        const loginRes = await request(app).post('/account/login').send({
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD
+        });
+        expect(loginRes.status).toBe(200);
+        const adminJWT = loginRes.body.token;
+
+        const res = await request(app)
+            .get(`/schedule/0`)
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send();
         expect(res.status).toBe(404);
     });
     
     test("Invalid schedule_id format", async () => {
-        const res = await request(app).get(`/schedule/abc`).send();
+        const loginRes = await request(app).post('/account/login').send({
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD
+        });
+        expect(loginRes.status).toBe(200);
+        const adminJWT = loginRes.body.token;
+
+        const res = await request(app)
+            .get(`/schedule/abc`)
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send();
         expect(res.status).toBe(400);
     });
 });
@@ -500,8 +604,8 @@ describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
         const adminJWT = adminLoginRes.body.token;
         
         const nonAdminLoginRes = await request(app).post('/account/login').send({
-            email: NON_ADMIN_EMAIL,
-            password: NON_ADMIN_PASSWORD
+            email: NON_ADMIN_EMAIL_1,
+            password: NON_ADMIN_PASSWORD_1
         });
         expect(nonAdminLoginRes.status).toBe(200);
         const nonAdminJWT = nonAdminLoginRes.body.token;
@@ -539,7 +643,7 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
                 password: ADMIN_PASSWORD
             });
         expect(loginRes.status).toBe(200);
-        const token = loginRes.body.token;
+        const adminJWT = loginRes.body.token;
 
         const testTime = new Date().addDays(1).roundOutMs();
         
@@ -548,7 +652,7 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
         
         const postNewScheduleRes = await request(app)
             .post('/schedule')
-            .set('Authorization', `Bearer ${token}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
             .send({
                 movie: schMovieAdminId1,
                 location: schLoc1Id,
@@ -569,7 +673,7 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
 
         const putUpdateScheduleRes = await request(app)
             .put(`/schedule/${scheduleId}`)
-            .set('Authorization', `Bearer ${token}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
             .send({
                 movie: schMovieAdminId2,
                 location: schLoc1Id,
@@ -590,7 +694,7 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
 
         const deleteScheduleRes = await request(app)
             .delete(`/schedule/${scheduleId}`)
-            .set('Authorization', `Bearer ${token}`);
+            .set('Authorization', `Bearer ${adminJWT}`);
         expect(deleteScheduleRes.status).toBe(200);
 
         // Get schedules & verify no longer available/not visible without ID
@@ -605,6 +709,7 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
         // Ensure soft deleted/now unavailable info can still be retrieved by ID
         const check4 = await request(app)
             .get(`/schedule/${scheduleId}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
             .send();
         expect(check4.status).toBe(200);
         expect(check4.body.available).toBe(false);
