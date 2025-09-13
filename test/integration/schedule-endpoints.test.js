@@ -35,12 +35,14 @@ var sch2Id = null;
 var sch3Id = null;
 var sch4Id = null;
 var sch5Id = null;
+var sch6Id = null;  // For forbidden admin tests
 
 var sch1Time = null;
 var sch2Time = null;
 var sch3Time = null;
 var sch4Time = null;
 var sch5Time = null;
+var sch6Time = null;
 
 const ADMIN_EMAIL = "ScheduleTestAdmin@email.com";
 const ADMIN_PASSWORD = "TestPassword1";
@@ -292,11 +294,22 @@ beforeAll(async () => {
         throw "Failed to insert test schedule 5";
     }
 
+    sch6Time = new Date().addDays(2).roundOutMs();
+    const [scheduleResult6] = await dbConnPool.execute(  // for forbidden admin tests
+        `INSERT INTO Schedule (movie_id, location_id, cinema_id, start_time, available) VALUES
+            (?, ?, ?, FROM_UNIXTIME(?), true)`,
+        [schMovieAdminId1, schLoc1Id, schLoc1Cin1Id, sch6Time.toEpochSec()]
+    );
+    if (scheduleResult6.affectedRows !== 1) {
+        throw "Failed to insert test schedule 6";
+    }
+
     sch1Id = scheduleResult1.insertId;
     sch2Id = scheduleResult2.insertId;
     sch3Id = scheduleResult3.insertId;
     sch4Id = scheduleResult4.insertId;
     sch5Id = scheduleResult5.insertId;
+    sch6Id = scheduleResult6.insertId;
 
     // Test existing reservations to ensure seat availability is correct
     const [confirmedReservationInsertResult] = await dbConnPool.execute(
@@ -594,7 +607,7 @@ describe("ADMIN - GET /schedule/{location_id}/{cinema_id}?date", () => {
         const nonAdmin = await request(app)
             .get(`/schedule/${schLoc1Id}/${schLoc1Cin1Id}?date=${today}`)
             .set('Authorization', `Bearer ${nonAdminJWT}`);
-        expect(nonAdmin.status).toBe(401);
+        expect(nonAdmin.status).toBe(403);
     });
 });
 
@@ -672,4 +685,38 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
         expect(check4.status).toBe(200);
         expect(check4.body.available).toBe(false);
     });
+
+    test('Non-admin forbidden', async() => {
+        const nonAdminJWT = await login(NON_ADMIN_EMAIL_1, NON_ADMIN_PASSWORD_1);
+        expect(nonAdminJWT).not.toBeNull();
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
+
+        const testTime = new Date().addDays(3).roundOutMs().toDateTimeStr();
+
+        const postPutBody = {
+            movie: schMovieAdminId2,
+            location: schLoc1Id,
+            cinema: schLoc1Cin2Id,
+            time: testTime
+        };
+
+        const postScheduleRes = await request(app)
+            .post('/schedule')
+            .set('Authorization', `Bearer ${nonAdminJWT}`)
+            .send(postPutBody);
+        expect(postScheduleRes.status).toBe(403);
+
+        const putScheduleRes = await request(app)
+            .put(`/schedule/${sch6Id}`)
+            .set('Authorization', `Bearer ${nonAdminJWT}`)
+            .send(postPutBody);
+        expect(putScheduleRes.status).toBe(403);
+
+        const deleteScheduleRes = await request(app)
+            .delete(`/schedule/${sch6Id}`)
+            .set('Authorization', `Bearer ${nonAdminJWT}`)
+            .send();
+        expect(deleteScheduleRes.status).toBe(403);
+    })
 });

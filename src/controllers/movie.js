@@ -54,7 +54,7 @@ export const adminPostNewMovie = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     // Validation
@@ -85,7 +85,7 @@ export const adminPutUpdateMovie = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     // Validation
@@ -121,7 +121,7 @@ export const adminDeleteMovieById = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     // Validation

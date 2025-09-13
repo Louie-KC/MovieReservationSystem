@@ -2,21 +2,32 @@ import bcrypt from "bcrypt";
 import request from 'supertest';
 import { dbConnPool } from '../../src/services/database.js';
 import { app, server } from '../../src/app.js';
+import { login } from "./util.js";
 
 const REGO_TEST_GOOD_EMAIL = "integration-rego-test@email.com";
 const REGO_TEST_BAD_EMAIL = "integration-bad-rego-test@email.com";
 const CUSTOMER_1_TEST_EMAIL = "integration-customer1-test@email.com";
 const CUSTOMER_1_TEST_PASS_1 = "TestPassword321";
 const CUSTOMER_1_TEST_PASS_2 = "TestPassword123";
-const CUSTOMER_2_TEST_EMAIL = "integration-customer2-test@email.com";
+const CUSTOMER_1_TEST_GIVEN = "TestCustomerOneGiven";
+const CUSTOMER_2_TEST_EMAIL = "integrationCustomer2Test@email.com";
 const CUSTOMER_2_TEST_PASS = "TestPassword5";
+const ADMIN_TEST_EMAIL = "integration-test-account-admin@email.com";
+const ADMIN_TEST_PASS = "TestPassword6";
+const ADMIN_PROMOTEE_EMAIL = "integration-test-account-promotee@email.com";
+const ADMIN_PROMOTEE_PASS = "TestPassword7";
+
+var customer1Id = null;  // for admin GET /account/{account_id} test
+var customer2Id = null;  // for admin GET /account/{account_id} test
+var adminPromoteeId = null;
 
 async function clearTestUserData() {
     await dbConnPool.execute(
         `DELETE FROM User
-        WHERE email_addr IN (?, ?, ?, ?)`,
+        WHERE email_addr IN (?, ?, ?, ?, ?, ?)`,
         [REGO_TEST_GOOD_EMAIL, REGO_TEST_BAD_EMAIL,
-            CUSTOMER_1_TEST_EMAIL, CUSTOMER_2_TEST_EMAIL]
+            CUSTOMER_1_TEST_EMAIL, CUSTOMER_2_TEST_EMAIL,
+            ADMIN_TEST_EMAIL, ADMIN_PROMOTEE_EMAIL]
     );
 }
 
@@ -26,22 +37,45 @@ beforeAll(async () => {
 
         const customer1PassHash = bcrypt.hashSync(CUSTOMER_1_TEST_PASS_1, 10);
         const [result1] = await dbConnPool.execute(
-            `INSERT INTO User (given_name, last_name, email_addr, password_hash) VALUES
-            ("testcustomer1given", "testcustomer1last", ?, ?)`,
-            [CUSTOMER_1_TEST_EMAIL, customer1PassHash]
+            `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+            (?, "testcustomer1last", ?, ?, "customer")`,
+            [CUSTOMER_1_TEST_GIVEN, CUSTOMER_1_TEST_EMAIL, customer1PassHash]
         );
         if (result1.affectedRows !== 1) {
             throw "Customer 1 failed to be inserted"
         };
+        customer1Id = result1.insertId;
+
         const customer2PassHash = bcrypt.hashSync(CUSTOMER_2_TEST_PASS, 10);
         const [result2] = await dbConnPool.execute(
-            `INSERT INTO User (given_name, last_name, email_addr, password_hash) VALUES
-            ("testcustomer2given", "testcustomer2last", ?, ?)`,
+            `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+            ("testcustomer2given", "testcustomer2last", ?, ?, "customer")`,
             [CUSTOMER_2_TEST_EMAIL, customer2PassHash]
         );
         if (result2.affectedRows !== 1) {
             throw "Customer 2 failed to be inserted"
         };
+        customer2Id = result2.insertId;
+
+        const adminPassHash = bcrypt.hashSync(ADMIN_TEST_PASS, 10);
+        const [result3] = await dbConnPool.execute(
+            `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+                ("testAdminGiven", "testAdminLast", ?, ?, "admin")`,
+            [ADMIN_TEST_EMAIL, adminPassHash]
+        );
+        if (result3.affectedRows !== 1) {
+            throw "Admin failed to be inserted";
+        }
+        const adminPromoteePassHash = bcrypt.hashSync(ADMIN_PROMOTEE_PASS, 10);
+        const [result4] = await dbConnPool.execute(
+            `INSERT INTO User (given_name, last_name, email_addr, password_hash, kind) VALUES
+                ("testAdminPromoteeGiven", "testAdminPromoteeLast", ?, ?, "customer")`,
+            [ADMIN_PROMOTEE_EMAIL, adminPromoteePassHash]
+        );
+        if (result4.affectedRows !== 1) {
+            throw "Admin promotee failed to be inserted";
+        }
+        adminPromoteeId = result4.insertId;
     } catch (err) {
         throw `account-endpoints test setup failed: ${err}`;
     }
@@ -206,5 +240,109 @@ describe('Account Change Password', () => {
                 "new": "AVeryStrongPassword123"
             });
             expect(changeRes.status).toBe(401);
+    });
+});
+
+describe('Admin - GET /account/{account_id}', () => {
+    test('Happy path', async () => {
+        const adminJWT = await login(ADMIN_TEST_EMAIL, ADMIN_TEST_PASS);
+        expect(adminJWT).not.toBeNull();
+
+        const res = await request(app).get(`/account/${customer2Id}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send();
+        expect(res.status).toBe(200);
+        expect(res.body.id).toBe(customer2Id);
+        expect(res.body.email).toBe(CUSTOMER_2_TEST_EMAIL);
+    });
+
+    test('Bad auth', async () => {
+        const cust2Jwt = await login(CUSTOMER_2_TEST_EMAIL, CUSTOMER_2_TEST_PASS);
+        expect(cust2Jwt).not.toBeNull();
+
+        const missingAuth = await request(app).get(`/account/${customer1Id}`).send();
+        expect(missingAuth.status).toBe(401);
+
+        const badAuth = await request(app).get(`/account/${customer1Id}`)
+            .set('Authorization', `Bearer ${cust2Jwt}`)
+            .send();
+        expect(badAuth.status).toBe(403);
+    })
+});
+
+describe('Admin - GET /account?name&email', () => {
+    var adminJWT = null;
+    beforeAll(async () => {
+        adminJWT = await login(ADMIN_TEST_EMAIL, ADMIN_TEST_PASS);
+        if (adminJWT === null) {
+            throw "Failed to login as admin"
+        }
+    });
+
+    test('Happy path', async () => {
+        const byEmailRes = await request(app).get(`/account?email=${CUSTOMER_1_TEST_EMAIL}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send();
+        expect(byEmailRes.status).toBe(200);
+        expect(Array.isArray(byEmailRes.body)).toBe(true);
+        expect(byEmailRes.body.some(acc => acc.given === CUSTOMER_1_TEST_GIVEN)).toBe(true);
+
+        const byNameRes = await request(app).get(`/account?name=${CUSTOMER_1_TEST_GIVEN.slice(1, 7)}`)
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send();
+        expect(byNameRes.status).toBe(200);
+        expect(Array.isArray(byNameRes.body)).toBe(true);
+        expect(byNameRes.body.some(acc => acc.email === CUSTOMER_1_TEST_EMAIL)).toBe(true);
+
+    });
+
+    test('Bad auth', async () => {
+        const cust2Jwt = await login(CUSTOMER_2_TEST_EMAIL, CUSTOMER_2_TEST_PASS);
+        expect(cust2Jwt).not.toBeNull();
+
+        const missingAuth = await request(app).get(`/account?email=${CUSTOMER_1_TEST_EMAIL}`).send();
+        expect(missingAuth.status).toBe(401);
+
+        const badAuth = await request(app).get(`/account?email=${CUSTOMER_1_TEST_EMAIL}`)
+            .set('Authorization', `Bearer ${cust2Jwt}`)
+            .send();
+        expect(badAuth.status).toBe(403);
+    });
+});
+
+describe('Admin - POST /account/promote-to-admin', () => {
+    var adminJWT = null;
+    beforeAll(async () => {
+        adminJWT = await login(ADMIN_TEST_EMAIL, ADMIN_TEST_PASS);
+        if (adminJWT === null) {
+            throw "Failed to login as admin"
+        }
+    });
+
+    test('Happy path', async () => {
+        const res = await request(app).post('/account/promote-to-admin')
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send({
+                account_id: adminPromoteeId
+            });
+        expect(res.status).toBe(200);
+    });
+
+    test('Bad auth', async () => {
+        const cust2Jwt = await login(CUSTOMER_2_TEST_EMAIL, CUSTOMER_2_TEST_PASS);
+        expect(cust2Jwt).not.toBeNull();
+
+        const missingAuth = await request(app).post('/account/promote-to-admin')
+            .send({
+                account_id: 0
+            });
+        expect(missingAuth.status).toBe(401);
+
+        const badAuth = await request(app).post('/account/promote-to-admin')
+            .set('Authorization', `Bearer ${cust2Jwt}`)
+            .send({
+                account_id: 0
+            });
+        expect(badAuth.status).toBe(403);
     });
 });

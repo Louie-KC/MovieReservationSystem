@@ -23,10 +23,10 @@ Orders (`/order`)
 * [POST /order/confirm](#post-orderconfirm)
 * [POST /order/cancel](#post-ordercancel)
 
-Admin: Accounts
+Admin: Account
 
-* [GET /accounts/{account_id}](#get-accountsaccount_id)
-* [GET /accounts?name={name part}&email={email part}](#get-accountsnamename-partemailemail-part)
+* [GET /account/{account_id}](#get-accountaccount_id)
+* [GET /account?name={name part}&email={email part}](#get-accountnamename-partemailemail-part)
 
 Admin: Movies
 
@@ -43,7 +43,7 @@ Admin: Schedule
 
 Admin: Aux
 
-* [POST /admin/promote-to-admin](#post-adminpromote-to-admin)
+* [POST /account/promote-to-admin](#post-accountpromote-to-admin)
 
 ### POST /account/register
 Register a new user account.
@@ -193,9 +193,6 @@ If the `date` parameter is not specified, the current date is assumed.
         * Invalid location_id format
         * Invalid cinema_id format
         * Invalid date format
-    * HTTP 401 Unauthorized:
-        * Invalid or missing JWT
-        * No permission
 
 ### GET /schedule/{schedule_id}
 Retrieve information about a schedule.
@@ -218,6 +215,10 @@ be an admin to retrieve a result.
       ```
     * HTTP 400 Bad Request:
         * Invalid schedule_id format
+    * HTTP 401 Unauthorized
+        * Missing or invalid JWT
+    * HTTP 403 Forbidden:
+        * No permission
     * HTTP 404 Not Found:
         * Invalid schedule_id
 
@@ -333,7 +334,7 @@ Cancel an order for a movie ticket/reservation. Cancellations are only possible 
     * HTTP 401 Unauthorised: Invalid token.
 
 
-### GET /accounts/{account_id}
+### GET /account/{account_id}
 ADMIN
 
 Retrieve information about a specific account.
@@ -354,9 +355,10 @@ Retrieve information about a specific account.
         * account_id is not mapped to an account/user.
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
 
-### GET /accounts?name={name part}&email={email part}
+### GET /account?name={name part}&email={email part}
 Retrieve account IDs that partially match the `name` and/or `email` parts. At least one of the parameters must be set with a minimum length of 3 characters.
 
 * Authentication: Bearer
@@ -379,6 +381,7 @@ Retrieve account IDs that partially match the `name` and/or `email` parts. At le
         * Invalid format for name query parameter
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
 
 ### POST /movie
@@ -407,6 +410,7 @@ Record a new movie.
         * Invalid field value(s) in request body
     * HTTP 401 Unauthorized
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
 
 ### PUT /movie/{movie_id}
@@ -429,8 +433,9 @@ Update movie details.
         * Invalid movie_id format
         * Missing fields in request body
         * Invalid field value(s) in request body
-    * HTTP 401 Unauthorized
+    * HTTP 401 Unauthorized:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
     * HTTP 404 Not Found:
         * movie_id does not map to a movie
@@ -448,6 +453,7 @@ An optional `force` query parameter (no value is required) can be specified whic
         * Invalid movie_id format
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
     * HTTP 404 Not Found:
         * movie_id does not map to a movie
@@ -477,6 +483,7 @@ Retrieve the movie schedule for a specific cinema on a date. The `date` paramete
         * Missing date parameter
     * HTTP 401 Unauthorized:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
     * HTTP 404 Not Found:
         * Invalid location_id and cinema_id combination
@@ -509,6 +516,7 @@ Add a new scheduled showing for a movie.
         * Invalid movie, location, or cinema ID.
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
 
 ### PUT /schedule/{schedule_id}
@@ -535,6 +543,7 @@ Tentative reservations/orders will not block the update, and will appear changed
         * One or more field values are invalid.
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
     * HTTP 404 Not Found:
         * schedule_id does not exist
@@ -553,13 +562,14 @@ An optional `force` query parameter (no value is required) can be specified whic
         * Invalid schedule_id format
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission
     * HTTP 404 Not Found:
         * schedule_id does not map to a schedule
     * HTTP 409 Conflict:
         * Confirmed schedule reservations exist
 
-### POST /admin/promote-to-admin
+### POST /account/promote-to-admin
 Upgrade an accounts role from customer to admin.
 
 * Authorisation: Bearer
@@ -576,4 +586,5 @@ Upgrade an accounts role from customer to admin.
         * Account already an admin
     * HTTP 401 Unauthorised:
         * Missing or invalid JWT
+    * HTTP 403 Forbidden:
         * No permission

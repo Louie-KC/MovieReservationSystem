@@ -93,7 +93,7 @@ export const adminGetCinemaSchedule = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     if (!verify(location_id, [Check.IS_INTEGER])) {
@@ -130,7 +130,7 @@ export const adminPostNewSchedule = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     // Validation
@@ -163,7 +163,7 @@ export const adminPutUpdateSchedule = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
     
     // Validation
@@ -200,7 +200,7 @@ export const adminDeleteSchedule = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     // Validation

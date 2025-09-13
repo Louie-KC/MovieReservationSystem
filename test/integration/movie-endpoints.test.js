@@ -125,7 +125,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    // await clearTestMovieData();
+    await clearTestMovieData();
     server.close();
 });
 
@@ -134,8 +134,6 @@ describe('GET /movie?genre={genre}', () => {
         const res = await request(app).get("/movie").send();
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
-        // console.log(testMovie1Id);
-        // console.log(JSON.stringify(res.body));
         expect(res.body.some(movie => movie.id === testMovie1Id)).toBe(true);
         expect(res.body.some(movie => movie.id === testMovie2Id)).toBe(true);
         expect(res.body.some(movie => movie.id === testMovie3Id)).toBe(true);
@@ -280,4 +278,22 @@ describe('Admin - POST, PUT, DELETE /movie endpoints', () => {
         expect(check3.status).toBe(200);
         expect(check3.body.some(movie => movie.id === testNewMovieId)).toBe(false);
     });
+
+    test('No auth', async () => {
+        const postNoAuth = await request(app)
+            .post(`/movie`)
+            .send();
+        expect(postNoAuth.status).toBe(401);
+        
+        const putNoAuth = await request(app)
+            .put(`/movie/${testNewMovieId}`)
+            .send();
+        expect(putNoAuth.status).toBe(401);
+        
+        const deleteNoAuth = await request(app)
+            .delete(`/movie/${testNewMovieId}`)
+            .send();
+        expect(deleteNoAuth.status).toBe(401);
+    });
+
 });

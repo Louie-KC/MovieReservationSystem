@@ -75,7 +75,7 @@ export const adminGetAccountById = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     const queryAccountId = req.params.account_id;
@@ -103,7 +103,7 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     // Input validation
@@ -121,6 +121,7 @@ export const adminGetAccountQuery = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ reason: "One or both query parameters are too short" });
     }
     if (queryEmail.length !== 0 && !verify(queryEmail, [Check.IS_EMAIL, Check.NO_SEMICOLON])) {
+        console.log(queryEmail);
         return res.status(400).json({ reason: "Bad email query parameter" });
     }
     if (!verify(queryName, [Check.IS_ALPHABETICAL, Check.NO_SEMICOLON])) {
@@ -145,7 +146,7 @@ export const adminPromoteToAdmin = asyncHandler(async (req, res, next) => {
         return res.status(adminCheck.failHttpCode).send();
     }
     if (!adminCheck.isAdmin) {
-        return res.status(401).send();
+        return res.status(403).send();
     }
 
     if (!req.body || !Account.validateFieldsChangeKind(req.body)) {
