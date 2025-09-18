@@ -7,9 +7,9 @@
   "scripts": {
     "app": "node --env-file=.env src/app.js",
     "watch": "node --watch --env-file=.env src/app.js",
-    "test": "export $(xargs < .env) && NODE_OPTIONS='--experimental-vm-modules' BASE_URL='127.0.0.1:8080' jest --detectOpenHandles --forceExit; cat .env | grep -v '^#' | xargs -I{} sh -c 'unset $(echo {} | cut -d '=' -f1)'",
+    "test": "export $(xargs < .env) && NODE_OPTIONS='--experimental-vm-modules' BASE_URL='127.0.0.1:8080' jest --detectOpenHandles --forceExit; JEST_EXIT_CODE=$?; cat .env | grep -v '^#' | xargs -I{} sh -c 'unset $(echo {} | cut -d '=' -f1)'; exit $JEST_EXIT_CODE;",
     "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --testPathPatterns=test/unit",
-    "test:integration": "export $(xargs < .env) && NODE_OPTIONS='--experimental-vm-modules' BASE_URL='127.0.0.1:8080' jest --testPathPatterns=test/integration --detectOpenHandles --forceExit; cat .env | grep -v '^#' | xargs -I{} sh -c 'unset $(echo {} | cut -d '=' -f1)'"
+    "test:integration": "export $(xargs < .env) && NODE_OPTIONS='--experimental-vm-modules' BASE_URL='127.0.0.1:8080' jest --testPathPatterns=test/integration --detectOpenHandles --forceExit; JEST_EXIT_CODE=$?; cat .env | grep -v '^#' | xargs -I{} sh -c 'unset $(echo {} | cut -d '=' -f1)'; exit $JEST_EXIT_CODE"
   },
   "author": "Louie-KC",
   "license": "ISC",
