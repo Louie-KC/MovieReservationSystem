@@ -293,10 +293,10 @@ Temporarily reserve a ticket and its accompanying seats for a scheduled movie.
       }
       ```
     * HTTP 400 Bad Request: (see reason)
-        * Invalid reservation ID
+        * Invalid schedule ID
         * Schedule start time is in the past
         * Seats are unavailable
-    * HTTP 401 Unauthorised: Invalid token.
+    * HTTP 401 Unauthorised: Missing or invalid token.
 
 ### POST /order/confirm
 Confirm an order for a reserved movie ticket.
