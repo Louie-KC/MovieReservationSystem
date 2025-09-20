@@ -146,6 +146,9 @@ export const adminPostNewSchedule = asyncHandler(async (req, res, next) => {
     }
 
     const status = await schedule.saveNewInDb();
+    if (status.err === "Movie ID does not exist" || status.err === "Schedule clash") {
+        return res.status(400).json({ reason: status.err });
+    }
     if (status.err) {
         return res.status(500).send();
     }

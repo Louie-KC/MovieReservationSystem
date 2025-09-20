@@ -718,5 +718,50 @@ describe(`Admin - POST, PUT, DELETE /schedule endpoints`, () => {
             .set('Authorization', `Bearer ${nonAdminJWT}`)
             .send();
         expect(deleteScheduleRes.status).toBe(403);
-    })
+    });
+
+    test('Ensure overlapping schedules are blocked', async () => {
+        const adminJWT = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(adminJWT).not.toBeNull();
+
+        const time0 = new Date().addDays(5).roundOutMs().toDateTimeStr();
+        const time1 = new Date().addDays(5).addMinutes(1).roundOutMs().toDateTimeStr();
+        const time2 = new Date().addDays(5).addMinutes(2).roundOutMs().toDateTimeStr();
+
+        // schMovieAdminId2 is 2 minutes long
+
+        const postNewScheduleRes = await request(app)
+            .post('/schedule')
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send({
+                movie: schMovieAdminId2,
+                location: schLoc1Id,
+                cinema: schLoc1Cin2Id,
+                time: time0
+            });
+        expect(postNewScheduleRes.status).toBe(201);
+
+        const oneMinuteLater = await request(app)
+            .post('/schedule')
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send({
+                movie: schMovieAdminId2,
+                location: schLoc1Id,
+                cinema: schLoc1Cin2Id,
+                time: time1
+            });
+        expect(oneMinuteLater.status).toBe(400);
+        expect(oneMinuteLater.body).toEqual({ reason: "Schedule clash" });
+
+        const twoMinutesLater = await request(app)
+            .post('/schedule')
+            .set('Authorization', `Bearer ${adminJWT}`)
+            .send({
+                movie: schMovieAdminId2,
+                location: schLoc1Id,
+                cinema: schLoc1Cin2Id,
+                time: time2
+            });
+        expect(twoMinutesLater.status).toBe(201);
+    });
 });

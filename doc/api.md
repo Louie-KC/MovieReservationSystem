@@ -539,6 +539,7 @@ Tentative reservations/orders will not block the update, and will appear changed
 * Possible responses:
     * HTTP 200 OK: Success
     * HTTP 400 Bad Request:
+        * The updated schedule overlaps with existing schedule(s).
         * Invalid schedule_id format.
         * One or more field values are invalid.
     * HTTP 401 Unauthorised:

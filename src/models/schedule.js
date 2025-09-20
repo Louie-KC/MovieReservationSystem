@@ -42,9 +42,67 @@ export class Schedule {
     /**
      * ADMIN
      * 
-     * Save the calling Schedule object into the database as a new schedule.
+     * Check if this schedule overlaps existing schedules for its location & cinema.
      * 
-     * @returns Object { schedule_id, null }
+     * @param {*} transactionConn A db connection in a transaction.
+     * @param {number} ignoreSchId An optional parameter to ignore a schedule ID. Used for updates. 
+     */
+    async overlaps(transactionConn, ignoreSchId = 0) {
+        const status = {
+            clash: false,
+            err: null
+        }
+        try {
+            const [scheduleClashCheck] = await transactionConn.execute(
+                `SELECT 
+                    UNIX_TIMESTAMP(?) AS 'startTime',
+                    UNIX_TIMESTAMP(?) + duration AS 'endTime',
+                    (
+                        SELECT JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'id', si.id,
+                                'start', UNIX_TIMESTAMP(si.start_time),
+                                'end', UNIX_TIMESTAMP(si.start_time + INTERVAL mi.duration MINUTE)
+                            )
+                        )
+                        FROM Schedule si
+                        INNER JOIN Movie mi ON si.movie_id = mi.id
+                        WHERE mi.id = ?
+                        AND si.location_id = ?
+                        AND si.cinema_id = ?
+                        AND si.id != ?
+                        AND DATE(si.start_time)
+                            BETWEEN DATE_SUB(?, INTERVAL 1 DAY) AND DATE_ADD(?, INTERVAL 1 DAY)
+                        AND si.available = true
+                        ORDER BY si.start_time
+                    ) AS 'existing'
+                FROM Movie
+                WHERE id = ?`,
+                [this.time, this.time, this.movie, this.location, this.cinema,
+                    ignoreSchId, this.time, this.time, this.movie]
+            );
+            if (scheduleClashCheck.length === 0) {
+                throw "Movie ID does not exist";
+            }
+            const startTime = +scheduleClashCheck[0].startTime;
+            const endTime = +scheduleClashCheck[0].endTime;
+            // JSON_ARRAYAGG() returns null when there are no rows
+            const existing = scheduleClashCheck[0].existing ? scheduleClashCheck[0].existing : [];
+
+            status.clash = existing.some(sch => startTime < sch.end && sch.start < endTime);
+        } catch (err) {
+            logger.error(`Schedule.overlaps(): ${err}`);
+            status.err = err;
+        }
+        return status;
+    }
+
+    /**
+     * ADMIN
+     * 
+     * Save the calling Schedule object into the database as a new schedule.
+     * Fails if the movie ID does not exist or if the new schedule creates
+     * a scheduling conflict.
      */
     async saveNewInDb() {
         const status = {
@@ -52,8 +110,23 @@ export class Schedule {
             err: null
         };
 
+        var conn = null;
         try {
-            const [result, _] = await dbConnPool.execute(
+            conn = await dbConnPool.getConnection();
+            await conn.beginTransaction();
+            const clashCheck = await this.overlaps(conn);
+
+            if (clashCheck.err === "Movie ID does not exist") {
+                throw clashCheck.err;
+            }
+            if (clashCheck.err) {
+                throw "DB operation failed";
+            }
+            if (clashCheck.clash) {
+                throw "Schedule clash";
+            }
+
+            const [result, _] = await conn.execute(
                 `INSERT INTO Schedule
                     (cinema_id, location_id, movie_id, start_time, available)
                 VALUES (?, ?, ?, ?, ?)`,
@@ -61,12 +134,20 @@ export class Schedule {
             );
 
             if (result.affectedRows === 0) {
-                status.err = "DB operation failed"
+                throw "DB operation failed";
             }
             status.schedule_id = result.insertId;
+            await conn.commit();
         } catch (err) {
             logger.error(`Schedule.saveNewInDB(${JSON.stringify(this)}) : ${err}`);
+            if (conn !== null) {
+                await conn.rollback();
+            }
             status.err = err;
+        } finally {
+            if (conn !== null) {
+                conn.release();
+            }
         }
 
         return status;
@@ -120,6 +201,14 @@ export class Schedule {
                 status.blockedByReservation = true;
                 await conn.rollback();
                 return status;
+            }
+
+            const clashCheck = await this.overlaps(conn, id);
+            if (clashCheck.err) {
+                throw "DB operation failed";
+            }
+            if (clashCheck.clash) {
+                throw "Schedule clash";
             }
 
             // Update schedule
